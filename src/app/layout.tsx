@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter, Nunito } from 'next/font/google'
-import Script from 'next/script'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import localFont from 'next/font/local'
+import Provider from './provider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -55,17 +56,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-NS2ZG22J02"></Script>
-        <Script id="google-analytics">
-          {` window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
-
-                    gtag('config', 'G-NS2ZG22J02');`}
-        </Script>
-      </head>
-      <body className={inter.className}>{children} </body>
+      <body className={inter.className}>
+      <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
+        <Provider>{children}</Provider>
+      </body>
     </html>
   )
 }
