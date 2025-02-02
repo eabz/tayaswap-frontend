@@ -1,6 +1,14 @@
 'use client'
 
+import { UnderConstruction } from '@/components'
+import { Center } from '@chakra-ui/react'
+
 export default function Page() {
-  // biome-ignore lint/style/useSelfClosingElements: <explanation>
-  return <main></main>
+  return (
+    <main>
+      <Center width="full" height="full">
+        <UnderConstruction />
+      </Center>
+    </main>
+  )
 }

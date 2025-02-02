@@ -78,8 +78,8 @@ export function Sidebar() {
   const { colorMode } = useColorMode()
 
   return (
-    <Box h="100vh" fontFamily="Inter">
-      <DrawerRoot open={open} size="xs" placement="start" modal={false}>
+    <Box h="100vh" width="300px">
+      <DrawerRoot open={open} size="full" placement="start" modal={false}>
         <DrawerContent background="menu-bg" h="100vh" boxShadow="none">
           <DrawerHeader>
             <DrawerTitle justifyContent="center">

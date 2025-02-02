@@ -1,6 +1,14 @@
 'use client'
 
-export default function Home() {
-  // biome-ignore lint/style/useSelfClosingElements: <explanation>
-  return <main></main>
+import { UnderConstruction } from '@/components'
+import { Center } from '@chakra-ui/react'
+
+export default function Page() {
+  return (
+    <main>
+      <Center width="full" height="full">
+        <UnderConstruction />
+      </Center>
+    </main>
+  )
 }

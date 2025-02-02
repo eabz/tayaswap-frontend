@@ -1,12 +1,19 @@
-import { Box, Heading, Text } from '@chakra-ui/react'
+import { Box, HStack, Heading, Text, VStack } from '@chakra-ui/react'
 import Image from 'next/image'
 
-const UnderConstruction = () => {
+export const UnderConstruction = () => {
   return (
-    <Box>
-      <Image src="/under=construction.png" loading="lazy" width={500} height={426} alt="logo-taya-swap" />
-      <Heading>🚧 Under Construction</Heading>
-      <Text className="w-full max-w-[500px] text-center mt-5">
+    <Box height="full" width="md" mx="auto">
+      <VStack width="full">
+        <HStack width="full" justifyContent="center" pt="20">
+          <Image src="/under-construction.png" loading="lazy" width={250} height={213} alt="logo-taya-swap" />
+        </HStack>
+        <Heading justifyContent="center" py="5">
+          🚧 Under Construction
+        </Heading>
+      </VStack>
+
+      <Text textAlign="center">
         We're hard at work building something amazing for you! Stay tuned as we put the finishing touches on a new
         experience. It won't be long before this space is ready to explore. Check back soon, or follow us to be the
         first to know when we're live!

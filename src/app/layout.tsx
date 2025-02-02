@@ -1,5 +1,5 @@
 import { Header, Sidebar } from '@/components'
-import { Stack } from '@chakra-ui/react'
+import { Box } from '@chakra-ui/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import type { Metadata } from 'next'
 import { Inter, Nunito } from 'next/font/google'
@@ -46,11 +46,11 @@ export default function RootLayout({
       <body>
         <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
         <Provider>
-          <Stack background="background" height="100vh">
-            <Header />
-            <Sidebar />
+          <Header />
+          <Sidebar />
+          <Box background="background" h="full" position="absolute" top="0" mt="90px" pl="300px" width="full">
             {children}
-          </Stack>
+          </Box>
         </Provider>
       </body>
     </html>
