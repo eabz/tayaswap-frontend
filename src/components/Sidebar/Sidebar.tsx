@@ -46,9 +46,10 @@ interface IMenuItem {
   name: string
   path: string
   icon: ReactElement
+  active: boolean
 }
 
-const MenuItem = ({ name, path, icon }: IMenuItem) => {
+const MenuItem = ({ name, path, icon, active }: IMenuItem) => {
   return (
     <Link href={path}>
       <HStack py={3} width="full" spaceX={5}>
@@ -78,7 +79,7 @@ export function Sidebar() {
           <DrawerBody>
             <VStack separator={<StackSeparator />}>
               {MenuItems.map((item, i) => (
-                <MenuItem key={i} name={item.name} icon={item.icon} path={item.path} />
+                <MenuItem key={i} name={item.name} icon={item.icon} path={item.path} active={item.path === pathname} />
               ))}
             </VStack>
           </DrawerBody>
@@ -97,7 +98,9 @@ export function Sidebar() {
                 <Link href="https://x.com/sublabs_" external>
                   <XIcon h={5} />
                 </Link>
-                <DiscordIcon h={5} />
+                <Link href="#">
+                  <DiscordIcon h={5} />
+                </Link>
                 <Link href="https://docs.taya.fi/" external>
                   <GitbookIcon h={5} />
                 </Link>
