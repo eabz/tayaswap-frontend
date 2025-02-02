@@ -1,8 +1,19 @@
-import { Sidebar } from '@/components'
+import { Header, Sidebar } from '@/components'
 import { Stack } from '@chakra-ui/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import type { Metadata } from 'next'
+import { Inter, Nunito } from 'next/font/google'
 import Provider from './provider'
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap'
+})
+
+const nunito = Nunito({
+  subsets: ['latin'],
+  display: 'swap'
+})
 
 export const metadata: Metadata = {
   title: 'Taya Finance',
@@ -31,11 +42,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${inter.className} ${nunito.className} antialiased`}>
       <body>
         <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
         <Provider>
           <Stack background="background" height="100vh">
+            <Header />
             <Sidebar />
             {children}
           </Stack>
