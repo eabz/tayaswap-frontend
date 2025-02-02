@@ -78,9 +78,9 @@ export function Sidebar() {
   const { colorMode } = useColorMode()
 
   return (
-    <Box minH="100vh" maxW="300px">
-      <DrawerRoot open={open} size="full" placement="start" restoreFocus={false}>
-        <DrawerContent background="menu-bg">
+    <Box h="100vh">
+      <DrawerRoot open={open} size="xs" placement="start">
+        <DrawerContent background="menu-bg" h="100vh">
           <DrawerHeader>
             <DrawerTitle justifyContent="center">
               <HStack justifyContent="center">
