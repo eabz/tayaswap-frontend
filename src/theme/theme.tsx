@@ -1,20 +1,25 @@
-import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react'
+import { createSystem, defaultConfig, defineConfig, defineTokens } from '@chakra-ui/react'
 
-const customConfig = defineConfig({
+const tokens = defineTokens({
+  colors: {
+    blue: { value: '#0C68E9' }
+  }
+})
+
+const config = defineConfig({
   theme: {
-    tokens: {
-      colors: {
-        blue: {
-          50: { value: '#0C68E9' }
-        }
-      }
-    },
+    tokens,
     semanticTokens: {
       colors: {
-        'button-active': { value: 'gray.200' }
+        'menu-bg': {
+          value: { _light: 'white', _dark: '#141B21' }
+        },
+        background: {
+          value: { _light: '#F5F5F5', _dark: '#111315' }
+        }
       }
     }
   }
 })
 
-export const system = createSystem(defaultConfig, customConfig)
+export const system = createSystem(config, defaultConfig)

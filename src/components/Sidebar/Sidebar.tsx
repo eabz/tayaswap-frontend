@@ -1,5 +1,6 @@
 'use client'
 
+import { useColorMode } from '@/hooks'
 import {
   Box,
   DrawerBody,
@@ -10,13 +11,13 @@ import {
   DrawerTitle,
   HStack,
   StackSeparator,
-  Switch,
   Text,
   VStack
 } from '@chakra-ui/react'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { type ReactElement, useState } from 'react'
+import { ColorModeButton } from '../Buttons'
 import {
   AnalyticsIcon,
   BridgeIcon,
@@ -36,7 +37,7 @@ import { Link } from '../Link'
 const MenuItems = [
   { name: 'Dashboard', path: '/', icon: <DashboardIcon h={6} /> },
   { name: 'Swap', path: '/swap', icon: <SwapIcon h={6} /> },
-  { name: 'Pools', path: '/pool', icon: <PoolsIcon h={6} /> },
+  { name: 'Pools', path: '/pools', icon: <PoolsIcon h={6} /> },
   { name: 'Bridge', path: '/bridge', icon: <BridgeIcon h={6} /> },
   { name: 'Points', path: '/points', icon: <PointsIcon h={6} /> },
   { name: 'Analytics', path: '/analytics', icon: <AnalyticsIcon h={6} /> }
@@ -57,9 +58,10 @@ const MenuItem = ({ name, path, icon, active }: IMenuItem) => {
         px={5}
         width="full"
         spaceX={5}
-        background={active ? 'blue.500' : 'none'}
+        background={active ? 'blue' : 'none'}
+        color={active ? 'white' : ''}
         rounded="full"
-        _hover={{ background: 'blue.500' }}
+        _hover={{ background: 'blue', color: 'white' }}
       >
         {icon}
         <Text fontSize="md">{name}</Text>
@@ -73,14 +75,21 @@ export function Sidebar() {
 
   const pathname = usePathname()
 
+  const { colorMode } = useColorMode()
+
   return (
     <Box minH="100vh" maxW="300px">
       <DrawerRoot open={open} size="full" placement="start" restoreFocus={false}>
-        <DrawerContent>
+        <DrawerContent background="menu-bg">
           <DrawerHeader>
             <DrawerTitle justifyContent="center">
               <HStack justifyContent="center">
-                <Image src="/logo-white.svg" width={100} height={100} alt="TayaSwap Interface" />
+                <Image
+                  src={colorMode === 'dark' ? '/logo-dark.svg' : '/logo-white.svg'}
+                  width={100}
+                  height={100}
+                  alt="TayaSwap Interface"
+                />
               </HStack>
             </DrawerTitle>
           </DrawerHeader>
@@ -118,12 +127,7 @@ export function Sidebar() {
               </HStack>
               <HStack justifyContent="space-between" width="full">
                 <Text>v1.1.1</Text>
-                <Switch.Root>
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
-                  <Switch.HiddenInput />
-                </Switch.Root>
+                <ColorModeButton />
               </HStack>
             </VStack>
           </DrawerFooter>

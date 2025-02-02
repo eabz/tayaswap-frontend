@@ -1,4 +1,5 @@
 import { Sidebar } from '@/components'
+import { Stack } from '@chakra-ui/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import type { Metadata } from 'next'
 import { Inter, Nunito } from 'next/font/google'
@@ -60,8 +61,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
         <Provider>
-          <Sidebar />
-          {children}
+          <Stack background="background">
+            <>
+              <Sidebar />
+              {children}
+            </>
+          </Stack>
         </Provider>
       </body>
     </html>
