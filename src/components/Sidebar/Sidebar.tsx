@@ -52,7 +52,15 @@ interface IMenuItem {
 const MenuItem = ({ name, path, icon, active }: IMenuItem) => {
   return (
     <Link href={path}>
-      <HStack py={3} width="full" spaceX={5}>
+      <HStack
+        py={3}
+        px={5}
+        width="full"
+        spaceX={5}
+        background={active ? 'blue.500' : 'none'}
+        rounded="full"
+        _hover={{ background: 'blue.500' }}
+      >
         {icon}
         <Text fontSize="md">{name}</Text>
       </HStack>
@@ -86,7 +94,7 @@ export function Sidebar() {
           <DrawerFooter pb={10}>
             <VStack width="full" spaceY={4} separator={<StackSeparator />}>
               <Link href={'https://sublabs.xyz/'} external>
-                <HStack>
+                <HStack justifyContent="space-between" alignItems="center">
                   <Text>Powered By SubLabs</Text>
                   <LinkIcon h={4} />
                 </HStack>
