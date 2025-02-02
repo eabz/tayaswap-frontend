@@ -1,15 +1,11 @@
 'use client'
 
 import { useColorMode } from '@/hooks'
-import { system } from '@/theme/theme'
-import { ChakraProvider } from '@chakra-ui/react'
-import { RainbowKitProvider, getDefaultConfig, lightTheme } from '@rainbow-me/rainbowkit'
+import { RainbowKitProvider, darkTheme, getDefaultConfig, lightTheme } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ThemeProvider } from 'next-themes'
 import type { ReactNode } from 'react'
 import { http, defineChain } from 'viem'
 import { WagmiProvider } from 'wagmi'
-import '@rainbow-me/rainbowkit/styles.css'
 
 const RPC = 'https://monad-testnet.drpc.org'
 
@@ -34,7 +30,7 @@ const monadTestnet = defineChain({
   }
 })
 
-export const wagmiConfig = getDefaultConfig({
+const wagmiConfig = getDefaultConfig({
   appName: 'Taya DEX',
   projectId: 'YOUR_PROJECT_ID',
   chains: [monadTestnet],
@@ -46,18 +42,16 @@ export const wagmiConfig = getDefaultConfig({
 
 const queryClient = new QueryClient()
 
-export default function RootLayout(props: { children: ReactNode }) {
+export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const { colorMode } = useColorMode()
 
   return (
-    <ChakraProvider value={system}>
-      <ThemeProvider attribute="class" disableTransitionOnChange>
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
-            <RainbowKitProvider theme={lightTheme({ borderRadius: 'large' })}>{props.children}</RainbowKitProvider>
-          </QueryClientProvider>
-        </WagmiProvider>
-      </ThemeProvider>
-    </ChakraProvider>
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider theme={colorMode === 'dark' ? darkTheme() : lightTheme()} modalSize="compact">
+          {children}
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   )
 }

@@ -1,0 +1,62 @@
+{
+  "name": "Taya Tokens",
+  "timestamp": "2025-01-11T16:03:25+00:00",
+  "version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "tags": {},
+  "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/refs/heads/main/taya/taya-finance.jpg",
+  "keywords": ["taya", "monad", "default"],
+  "tokens": [
+    {
+      "address": "0x0000000000000000000000000000000000000000",
+      "chainId": 10143,
+      "name": "Monad Testnet",
+      "symbol": "TMON",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/mon.png"
+    },
+    {
+      "address": "0x22e6c8d87b21faec747b7ebd635dcd80e5d4b716",
+      "chainId": 10143,
+      "name": "Uniswap",
+      "symbol": "UNI",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/uni.png"
+    },
+    {
+      "address": "0x1ed9ca7e442a91591acecfb2d40e843e4fee00ff",
+      "chainId": 10143,
+      "name": "Tether",
+      "symbol": "USDT",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/usdt.png"
+    },
+    {
+      "address": "0x760afe86e5de5fa0ee542fc7b7b713e1c5425701",
+      "chainId": 10143,
+      "name": "Wrapped Monad",
+      "symbol": "WETH",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/weth.png"
+    },
+    {
+      "address": "0xff901f49b8864ad60cc5799cc9172ae0455ec1d3",
+      "chainId": 10143,
+      "name": "USDC",
+      "symbol": "USDC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/usdc.png"
+    },
+    {
+      "address": "0x2f1014530ed895245ecb5f9a79de023102f2e741",
+      "chainId": 10143,
+      "name": "DAI",
+      "symbol": "DAI",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/dai.png"
+    }
+  ]
+}

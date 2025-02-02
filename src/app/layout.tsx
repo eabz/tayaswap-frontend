@@ -1,9 +1,9 @@
 import { Header, Sidebar } from '@/components'
+import { ThemeProvider, WalletProvider } from '@/providers'
 import { Box } from '@chakra-ui/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import type { Metadata } from 'next'
 import { Inter, Nunito } from 'next/font/google'
-import Provider from './provider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -45,11 +45,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={`${inter.className} ${nunito.className} antialiased`}>
       <body>
         <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
-        <Provider>
-          <Header />
-          <Sidebar />
-          <Box>{children}</Box>
-        </Provider>
+        <ThemeProvider>
+          <WalletProvider>
+            <Header />
+            <Sidebar />
+            <Box>{children}</Box>
+          </WalletProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
