@@ -1,6 +1,7 @@
+import { Sidebar } from '@/components'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import type { Metadata } from 'next'
 import { Inter, Nunito } from 'next/font/google'
-import { GoogleAnalytics } from '@next/third-parties/google'
 import localFont from 'next/font/local'
 import Provider from './provider'
 
@@ -57,8 +58,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-      <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
-        <Provider>{children}</Provider>
+        <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
+        <Provider>
+          <Sidebar />
+          {children}
+        </Provider>
       </body>
     </html>
   )
