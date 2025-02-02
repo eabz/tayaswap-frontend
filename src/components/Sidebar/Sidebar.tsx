@@ -1,6 +1,7 @@
 'use client'
 
-import { useColorMode } from '@/hooks'
+import { useBreakpoint, useColorMode } from '@/hooks'
+import { useSidebar } from '@/state'
 import {
   Box,
   DrawerBody,
@@ -10,13 +11,15 @@ import {
   DrawerRoot,
   DrawerTitle,
   HStack,
+  IconButton,
+  Stack,
   StackSeparator,
   Text,
   VStack
 } from '@chakra-ui/react'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { type ReactElement, useState } from 'react'
+import type { ReactNode } from 'react'
 import { ColorModeButton } from '../Buttons'
 import {
   AnalyticsIcon,
@@ -32,6 +35,7 @@ import {
   SwapIcon,
   XIcon
 } from '../Icons'
+import { CloseIcon } from '../Icons/Close'
 import { Link } from '../Link'
 
 const MenuItems = [
@@ -46,7 +50,7 @@ const MenuItems = [
 interface IMenuItem {
   name: string
   path: string
-  icon: ReactElement
+  icon: ReactNode
   active: boolean
 }
 
@@ -71,15 +75,17 @@ const MenuItem = ({ name, path, icon, active }: IMenuItem) => {
 }
 
 export function Sidebar() {
-  const [open, setOpen] = useState(true)
+  const { open, setOpen } = useSidebar()
 
   const pathname = usePathname()
 
   const { colorMode } = useColorMode()
 
+  const { mobile } = useBreakpoint()
+
   return (
     <Box h="100vh" width="300px">
-      <DrawerRoot open={open} size="full" placement="start" modal={false}>
+      <DrawerRoot open={mobile ? open : true} size="full" placement="start" modal={false}>
         <DrawerContent background="menu-bg" h="100vh" boxShadow="none">
           <DrawerHeader>
             <DrawerTitle justifyContent="center">
@@ -90,6 +96,13 @@ export function Sidebar() {
                   height={100}
                   alt="TayaSwap Interface"
                 />
+                {mobile && (
+                  <Stack position="absolute" top="2" right="2">
+                    <IconButton onClick={() => setOpen(!open)} variant="ghost" size="xs" rounded="full">
+                      <CloseIcon />
+                    </IconButton>
+                  </Stack>
+                )}
               </HStack>
             </DrawerTitle>
           </DrawerHeader>
@@ -126,7 +139,7 @@ export function Sidebar() {
                 </Link>
               </HStack>
               <HStack justifyContent="space-between" width="full">
-                <Text>v1.1.1</Text>
+                <Text>v1.0.0</Text>
                 <ColorModeButton />
               </HStack>
             </VStack>

@@ -48,9 +48,7 @@ export default function RootLayout({
         <Provider>
           <Header />
           <Sidebar />
-          <Box background="background" h="full" position="absolute" top="0" mt="90px" pl="300px" width="full">
-            {children}
-          </Box>
+          <Box>{children}</Box>
         </Provider>
       </body>
     </html>
