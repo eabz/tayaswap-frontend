@@ -96,13 +96,11 @@ export function Sidebar() {
                   height={100}
                   alt="TayaSwap Interface"
                 />
-                {mobile && (
-                  <Stack position="absolute" top="2" right="2">
-                    <IconButton onClick={() => setOpen(!open)} variant="ghost" size="xs" rounded="full">
-                      <CloseIcon />
-                    </IconButton>
-                  </Stack>
-                )}
+                <Stack position="absolute" top="2" right="2" hideFrom="md">
+                  <IconButton onClick={() => setOpen(!open)} variant="ghost" size="xs" rounded="full">
+                    <CloseIcon />
+                  </IconButton>
+                </Stack>
               </HStack>
             </DrawerTitle>
           </DrawerHeader>
