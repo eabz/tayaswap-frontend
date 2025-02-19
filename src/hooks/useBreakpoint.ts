@@ -10,5 +10,7 @@ export const useBreakpoint = (): { mobile: boolean } => {
     '2xl': '2xl'
   })
 
-  return { mobile: breakpoint === 'sm' || breakpoint === 'md' || breakpoint === 'xs' }
+  console.log(breakpoint)
+
+  return { mobile: breakpoint === 'sm' || breakpoint === 'md' || breakpoint === 'xs' || breakpoint === 'base' }
 }

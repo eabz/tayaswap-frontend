@@ -1,6 +1,6 @@
 'use client'
 
-import { useBreakpoint, useColorMode } from '@/hooks'
+import { useBreakpoint } from '@/hooks'
 import { useSidebar } from '@/state'
 import {
   Box,
@@ -17,7 +17,6 @@ import {
   Text,
   VStack
 } from '@chakra-ui/react'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { ColorModeButton } from '../Buttons'
@@ -37,6 +36,7 @@ import {
 } from '../Icons'
 import { CloseIcon } from '../Icons/Close'
 import { Link } from '../Link'
+import { SideBarLogo } from './Logo'
 
 const MenuItems = [
   { name: 'Dashboard', path: '/', icon: <DashboardIcon h={6} /> },
@@ -79,24 +79,22 @@ export function Sidebar() {
 
   const pathname = usePathname()
 
-  const { colorMode } = useColorMode()
-
   const { mobile } = useBreakpoint()
-
+  console.log(mobile)
   return (
     <Box h="100vh" width="300px">
       <DrawerRoot open={mobile ? open : true} size="full" placement="start" modal={false}>
-        <DrawerContent background="menu-bg" h="100vh" boxShadow="none">
+        <DrawerContent
+          background="menu-bg"
+          h="100vh"
+          boxShadow="none"
+          _open={{ animation: mobile ? undefined : 'none' }}
+        >
           <DrawerHeader>
             <DrawerTitle justifyContent="center">
               <HStack justifyContent="center">
-                <Image
-                  src={colorMode === 'dark' ? '/logo-dark.svg' : '/logo-white.svg'}
-                  width={100}
-                  height={100}
-                  alt="TayaSwap Interface"
-                />
-                <Stack position="absolute" top="2" right="2" hideFrom="md">
+                <SideBarLogo />
+                <Stack position="absolute" top="2" right="2" hideFrom="lg">
                   <IconButton onClick={() => setOpen(!open)} variant="ghost" size="xs" rounded="full">
                     <CloseIcon />
                   </IconButton>

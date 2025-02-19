@@ -1,7 +1,7 @@
 'use client'
 
 import { useColorMode } from '@/hooks'
-import { HStack, Switch } from '@chakra-ui/react'
+import { ClientOnly, HStack, Switch } from '@chakra-ui/react'
 import { MoonIcon, SunIcon } from '../Icons'
 
 export const ColorModeButton = () => {
@@ -13,15 +13,17 @@ export const ColorModeButton = () => {
   }
 
   return (
-    <HStack alignItems="center">
-      <Switch.Root size="lg" onChange={toggleColorMode} checked={colorMode === 'dark'}>
-        <Switch.HiddenInput />
-        <Switch.Control>
-          <Switch.Thumb>
-            <Switch.ThumbIndicator fallback={thumbLabel.off}>{thumbLabel.on}</Switch.ThumbIndicator>
-          </Switch.Thumb>
-        </Switch.Control>
-      </Switch.Root>
-    </HStack>
+    <ClientOnly>
+      <HStack alignItems="center">
+        <Switch.Root size="lg" onChange={toggleColorMode} checked={colorMode === 'dark'}>
+          <Switch.HiddenInput />
+          <Switch.Control>
+            <Switch.Thumb>
+              <Switch.ThumbIndicator fallback={thumbLabel.off}>{thumbLabel.on}</Switch.ThumbIndicator>
+            </Switch.Thumb>
+          </Switch.Control>
+        </Switch.Root>
+      </HStack>
+    </ClientOnly>
   )
 }
