@@ -1,13 +1,14 @@
 'use client'
 
 import { useColorMode } from '@/hooks'
+import { ClientOnly } from '@chakra-ui/react'
 import { RainbowKitProvider, darkTheme, getDefaultConfig, lightTheme } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { http, defineChain } from 'viem'
 import { WagmiProvider } from 'wagmi'
 
-const RPC = 'https://monad-testnet.drpc.org'
+const RPC = 'https://testnet-rpc.monad.xyz'
 
 const monadTestnet = defineChain({
   id: 10143,
@@ -48,9 +49,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={colorMode === 'dark' ? darkTheme() : lightTheme()} modalSize="compact">
-          {children}
-        </RainbowKitProvider>
+        <ClientOnly>
+          <RainbowKitProvider theme={colorMode === 'dark' ? darkTheme() : lightTheme()} modalSize="compact">
+            {children}
+          </RainbowKitProvider>
+        </ClientOnly>
       </QueryClientProvider>
     </WagmiProvider>
   )

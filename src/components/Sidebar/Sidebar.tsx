@@ -80,7 +80,7 @@ export function Sidebar() {
   const pathname = usePathname()
 
   const { mobile } = useBreakpoint()
-  console.log(mobile)
+
   return (
     <Box h="100vh" width="300px">
       <DrawerRoot open={mobile ? open : true} size="full" placement="start" modal={false}>
