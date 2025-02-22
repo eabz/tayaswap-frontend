@@ -1,9 +1,13 @@
 'use client'
 
 import { useMobile } from '@/hooks'
+import { usePools } from '@/services/graph'
 import { Box, Center } from '@chakra-ui/react'
 
 export default function Page() {
+  const { data: pools, loading, error } = usePools()
+  console.log(pools, loading, error)
+
   const { mobile } = useMobile()
 
   return (
