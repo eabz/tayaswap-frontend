@@ -1,0 +1,38 @@
+{
+  "name": "Taya Tokens",
+  "timestamp": "2025-01-11T16:03:25+00:00",
+  "version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "tags": {},
+  "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/refs/heads/main/taya/taya-finance.jpg",
+  "keywords": ["taya", "monad", "default"],
+  "tokens": [
+    {
+      "address": "0x0000000000000000000000000000000000000000",
+      "chainId": 10143,
+      "name": "Monad Testnet",
+      "symbol": "TMON",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/mon.png"
+    },
+    {
+      "address": "0xca3feccd9139b990ebbf3873773333f8f25f85cd",
+      "chainId": 10143,
+      "name": "tayUSDT",
+      "symbol": "tayUSDT",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/usdt.png"
+    },
+    {
+      "address": "0x7d5d0ba109a6b9f6dde7d2a89a8150b589d49504",
+      "chainId": 10143,
+      "name": "tayUSDC",
+      "symbol": "tayUSDC",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/usdc.png"
+    }
+  ]
+}
