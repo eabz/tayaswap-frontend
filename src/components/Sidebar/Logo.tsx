@@ -8,12 +8,13 @@ export const SideBarLogo = () => {
   const { colorMode } = useColorMode()
 
   return (
-    <ClientOnly fallback={<Image src={'/logo-dark.svg'} width={100} height={100} alt="TayaSwap Interface" />}>
+    <ClientOnly fallback={<Image src={'/logo-dark.svg'} width="89" height="37" alt="TayaSwap Interface" priority />}>
       <Image
         src={colorMode === 'dark' ? '/logo-dark.svg' : '/logo-white.svg'}
-        width={100}
-        height={100}
+        width="89"
+        height="37"
         alt="TayaSwap Interface"
+        priority
       />
     </ClientOnly>
   )

@@ -1,9 +1,10 @@
 'use client'
 
-import { useBreakpoint } from '@/hooks'
+import { useMobile } from '@/hooks'
 import { useSidebar } from '@/state'
 import {
   Box,
+  Button,
   DrawerBody,
   DrawerContent,
   DrawerFooter,
@@ -18,13 +19,12 @@ import {
   VStack
 } from '@chakra-ui/react'
 import { usePathname } from 'next/navigation'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { ColorModeButton } from '../Buttons'
 import {
   AnalyticsIcon,
-  BridgeIcon,
-  DashboardIcon,
   DiscordIcon,
+  DropletIcon,
   GitbookIcon,
   GithubIcon,
   HomeIcon,
@@ -39,12 +39,11 @@ import { Link } from '../Link'
 import { SideBarLogo } from './Logo'
 
 const MenuItems = [
-  { name: 'Dashboard', path: '/', icon: <DashboardIcon h={6} /> },
-  { name: 'Swap', path: '/swap', icon: <SwapIcon h={6} /> },
-  { name: 'Pools', path: '/pools', icon: <PoolsIcon h={6} /> },
-  { name: 'Bridge', path: '/bridge', icon: <BridgeIcon h={6} /> },
-  { name: 'Points', path: '/points', icon: <PointsIcon h={6} /> },
-  { name: 'Analytics', path: '/analytics', icon: <AnalyticsIcon h={6} /> }
+  { name: 'Swap', path: '/swap', icon: <SwapIcon h={6} />, enabled: true },
+  { name: 'Pools', path: '/pools', icon: <PoolsIcon h={6} />, enabled: true },
+  { name: 'Faucet', path: '/faucet', icon: <DropletIcon h={6} />, enabled: false },
+  { name: 'Points', path: '/points', icon: <PointsIcon h={6} />, enabled: false },
+  { name: 'Analytics', path: '/analytics', icon: <AnalyticsIcon h={6} />, enabled: false }
 ]
 
 interface IMenuItem {
@@ -52,26 +51,37 @@ interface IMenuItem {
   path: string
   icon: ReactNode
   active: boolean
+  enabled: boolean
 }
 
-const MenuItem = ({ name, path, icon, active }: IMenuItem) => {
-  return (
-    <Link href={path}>
-      <HStack
-        py={3}
-        px={5}
-        width="full"
-        spaceX={5}
-        background={active ? 'blue' : 'none'}
-        color={active ? 'white' : ''}
-        rounded="full"
-        _hover={{ background: 'blue', color: 'white' }}
-      >
-        {icon}
-        <Text fontSize="md">{name}</Text>
-      </HStack>
-    </Link>
+const MenuItem = ({ name, path, icon, active, enabled }: IMenuItem) => {
+  const content = (
+    <HStack
+      py={3}
+      px={5}
+      width="full"
+      spaceX={5}
+      background={active ? 'blue' : 'none'}
+      color={active ? 'white' : ''}
+      rounded="full"
+      _hover={{ background: 'blue', color: 'white' }}
+    >
+      {icon}
+      <Text fontSize="md" fontWeight="500">
+        {name}
+      </Text>
+    </HStack>
   )
+
+  if (!enabled) {
+    return (
+      <Button disabled variant="ghost" w="full" px="0">
+        {content}
+      </Button>
+    )
+  }
+
+  return <Link href={path}>{content}</Link>
 }
 
 export function Sidebar() {
@@ -79,7 +89,13 @@ export function Sidebar() {
 
   const pathname = usePathname()
 
-  const { mobile } = useBreakpoint()
+  const { mobile } = useMobile()
+
+  useEffect(() => {
+    if (!pathname) return
+
+    setOpen(false)
+  }, [pathname, setOpen])
 
   return (
     <Box h="100vh" width="300px">
@@ -92,7 +108,7 @@ export function Sidebar() {
         >
           <DrawerHeader>
             <DrawerTitle justifyContent="center">
-              <HStack justifyContent="center">
+              <HStack justifyContent="space-between">
                 <SideBarLogo />
                 <Stack position="absolute" top="2" right="2" hideFrom="lg">
                   <IconButton onClick={() => setOpen(!open)} variant="ghost" size="xs" rounded="full">
@@ -105,7 +121,14 @@ export function Sidebar() {
           <DrawerBody>
             <VStack separator={<StackSeparator />}>
               {MenuItems.map((item, i) => (
-                <MenuItem key={i} name={item.name} icon={item.icon} path={item.path} active={item.path === pathname} />
+                <MenuItem
+                  key={i}
+                  name={item.name}
+                  icon={item.icon}
+                  path={item.path}
+                  active={item.path === pathname}
+                  enabled={item.enabled}
+                />
               ))}
             </VStack>
           </DrawerBody>
@@ -113,7 +136,7 @@ export function Sidebar() {
             <VStack width="full" spaceY={4} separator={<StackSeparator />}>
               <Link href={'https://sublabs.xyz/'} external>
                 <HStack justifyContent="space-between" alignItems="center">
-                  <Text>Powered By SubLabs</Text>
+                  <Text fontWeight="600">Powered By SubLabs</Text>
                   <LinkIcon h={4} />
                 </HStack>
               </Link>

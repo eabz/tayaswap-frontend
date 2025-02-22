@@ -1,13 +1,13 @@
 'use client'
 
-import { useBreakpoint } from '@/hooks'
+import { useMobile } from '@/hooks'
 import { useSidebar } from '@/state'
 import { Flex, HStack, IconButton } from '@chakra-ui/react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { MenuIcon } from '../Icons'
 
 export const Header = () => {
-  const { mobile } = useBreakpoint()
+  const { mobile } = useMobile()
 
   const { open, setOpen } = useSidebar()
 

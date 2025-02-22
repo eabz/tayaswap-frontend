@@ -1,14 +1,13 @@
 'use client'
 
 import { useColorMode } from '@/hooks'
+import { getMonadRpcUrls, getMonadRpcUrlsFallback } from '@/utils'
 import { ClientOnly } from '@chakra-ui/react'
 import { RainbowKitProvider, darkTheme, getDefaultConfig, lightTheme } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { http, defineChain } from 'viem'
+import { defineChain } from 'viem'
 import { WagmiProvider } from 'wagmi'
-
-const RPC = 'https://testnet-rpc.monad.xyz'
 
 const monadTestnet = defineChain({
   id: 10143,
@@ -19,9 +18,7 @@ const monadTestnet = defineChain({
     symbol: 'TMON',
     decimals: 18
   },
-  rpcUrls: {
-    default: { http: [RPC] }
-  },
+  rpcUrls: getMonadRpcUrls(),
   testnet: true,
   contracts: {
     multicall3: {
@@ -36,7 +33,7 @@ const wagmiConfig = getDefaultConfig({
   projectId: 'YOUR_PROJECT_ID',
   chains: [monadTestnet],
   transports: {
-    [monadTestnet.id]: http(RPC)
+    [monadTestnet.id]: getMonadRpcUrlsFallback()
   },
   ssr: true
 })

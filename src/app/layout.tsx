@@ -4,15 +4,29 @@ import { Box } from '@chakra-ui/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import type { Metadata } from 'next'
 import { Inter, Nunito } from 'next/font/google'
+import localFont from 'next/font/local'
 
 const inter = Inter({
   subsets: ['latin'],
-  display: 'swap'
+  display: 'swap',
+  variable: '--font-inter'
 })
 
 const nunito = Nunito({
   subsets: ['latin'],
-  display: 'swap'
+  display: 'swap',
+  variable: '--font-nunito'
+})
+
+const geistSans = localFont({
+  src: './fonts/geist.woff',
+  variable: '--font-geist-sans',
+  weight: '100 900'
+})
+const geistMono = localFont({
+  src: './fonts/geist-mono.woff',
+  variable: '--font-geist-mono',
+  weight: '100 900'
 })
 
 export const metadata: Metadata = {
@@ -42,7 +56,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.className} ${nunito.className} antialiased`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${nunito.variable} antialiased`}
+    >
       <body>
         <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
         <ThemeProvider>

@@ -1,2 +1,2 @@
 export * from './useColorMode'
-export * from './useBreakpoint'
+export * from './useMobile'

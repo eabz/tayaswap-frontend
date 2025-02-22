@@ -1,6 +1,6 @@
 import { useBreakpointValue } from '@chakra-ui/react'
 
-export const useBreakpoint = (): { mobile: boolean } => {
+export const useMobile = (): { mobile: boolean } => {
   const breakpoint = useBreakpointValue({
     base: 'base',
     sm: 'sm',

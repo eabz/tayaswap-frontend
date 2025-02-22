@@ -16,7 +16,7 @@
       "name": "Monad Testnet",
       "symbol": "TMON",
       "decimals": 18,
-      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/mon.png"
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/mon.png"
     },
     {
       "address": "0xca3feccd9139b990ebbf3873773333f8f25f85cd",
@@ -24,7 +24,7 @@
       "name": "tayUSDT",
       "symbol": "tayUSDT",
       "decimals": 18,
-      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/usdt.png"
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/usdt.png"
     },
     {
       "address": "0x7d5d0ba109a6b9f6dde7d2a89a8150b589d49504",
@@ -32,7 +32,7 @@
       "name": "tayUSDC",
       "symbol": "tayUSDC",
       "decimals": 18,
-      "logoURI": "https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/usdc.png"
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/usdc.png"
     }
   ]
 }
