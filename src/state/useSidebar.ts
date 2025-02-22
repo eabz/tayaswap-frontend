@@ -5,7 +5,7 @@ interface ISidebarStore {
   setOpen: (open: boolean) => void
 }
 
-export const useSidebar = create<ISidebarStore>()((set) => ({
+export const useSidebarState = create<ISidebarStore>()((set) => ({
   open: false,
   setOpen: (open: boolean) => set(() => ({ open }))
 }))

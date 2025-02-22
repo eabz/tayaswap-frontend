@@ -4,13 +4,14 @@ import useSWR from 'swr'
 const TOKENS_LIST =
   'https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokenlist.json'
 
-interface ITokenListToken {
+export interface ITokenListToken {
   address: string
   chainId: number
   name: string
   symbol: string
   decimals: number
   logoURI: string
+  user?: boolean
 }
 
 interface ITokenListResponse {

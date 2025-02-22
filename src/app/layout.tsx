@@ -1,5 +1,5 @@
 import { Header, Sidebar } from '@/components'
-import { ThemeProvider, WalletProvider } from '@/providers'
+import { StateProvider, ThemeProvider, WalletProvider } from '@/providers'
 import { Box } from '@chakra-ui/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import type { Metadata } from 'next'
@@ -65,9 +65,11 @@ export default function RootLayout({
         <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
         <ThemeProvider>
           <WalletProvider>
-            <Header />
-            <Sidebar />
-            <Box>{children}</Box>
+            <StateProvider>
+              <Header />
+              <Sidebar />
+              <Box>{children}</Box>
+            </StateProvider>
           </WalletProvider>
         </ThemeProvider>
       </body>

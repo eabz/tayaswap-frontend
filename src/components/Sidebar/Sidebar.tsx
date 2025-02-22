@@ -1,7 +1,7 @@
 'use client'
 
 import { useMobile } from '@/hooks'
-import { useSidebar } from '@/state'
+import { useSidebarState } from '@/state'
 import {
   Box,
   Button,
@@ -85,7 +85,7 @@ const MenuItem = ({ name, path, icon, active, enabled }: IMenuItem) => {
 }
 
 export function Sidebar() {
-  const { open, setOpen } = useSidebar()
+  const { open, setOpen } = useSidebarState()
 
   const pathname = usePathname()
 
