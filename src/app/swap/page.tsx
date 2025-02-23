@@ -1,12 +1,15 @@
 'use client'
 
 import { useMobile } from '@/hooks'
-import { useTokensList } from '@/services/tokens'
+import { useTokenBalancesStore, useTokenListStore } from '@/stores'
 import { Box, Center } from '@chakra-ui/react'
 
 export default function Page() {
-  const { data: tokenList, loading, error } = useTokensList()
-  console.log(tokenList, loading, error)
+  const { userTokenList, defaultTokenList } = useTokenListStore()
+  console.log(userTokenList, defaultTokenList)
+
+  const { tokenBalances } = useTokenBalancesStore()
+  console.log(tokenBalances)
 
   const { mobile } = useMobile()
 
