@@ -30,6 +30,8 @@ function reload(
   }
 }
 
+// TODO: find a way to fix this lint exception
+// biome-ignore lint/style/useNamingConvention: hooks must be constants
 export const useTokenBalancesStore = create<ITokenBalancesStore>((set, get) => ({
   tokenBalances: {},
   poolBalances: {},

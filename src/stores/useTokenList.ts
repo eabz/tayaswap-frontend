@@ -18,6 +18,8 @@ function computeFullTokenList(userList: ITokenListToken[], defaultList: ITokenLi
   return updatedUserList.concat(updatedDefaultList)
 }
 
+// TODO: find a way to fix this lint exception for store hooks
+// biome-ignore lint/style/useNamingConvention: hooks must be constants
 export const useTokenListStore = create<ITokenListStore>()(
   persist(
     (set, get) => ({
