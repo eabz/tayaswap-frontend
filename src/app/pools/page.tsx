@@ -17,9 +17,9 @@ export default function Page() {
         h={mobile ? 'calc(100vh - 80px)' : 'full'}
         position="absolute"
         top="0"
-        ml={mobile ? '0px' : '300px'}
-        mt="80px"
+        ml={mobile ? '0px' : '150px'}
         width="full"
+        zIndex="0"
       >
         <Center width="full" height="full">
           Hello World!

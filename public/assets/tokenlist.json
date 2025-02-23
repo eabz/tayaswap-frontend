@@ -15,23 +15,127 @@
       "name": "Monad Testnet",
       "symbol": "TMON",
       "decimals": 18,
-      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/mon.png"
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/mon.jpg"
     },
     {
-      "address": "0xca3feccd9139b990ebbf3873773333f8f25f85cd",
+      "address": "0x88b8e2161dedc77ef4ab7585569d2415a1c1055d",
       "chainId": 10143,
-      "name": "tayUSDT",
-      "symbol": "tayUSDT",
-      "decimals": 18,
-      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/usdt.png"
+      "name": "Tether USDT",
+      "symbol": "USDT",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/usdt.jpg"
     },
     {
-      "address": "0x7d5d0ba109a6b9f6dde7d2a89a8150b589d49504",
+      "address": "0x88b8e2161dedc77ef4ab7585569d2415a1c1055d",
       "chainId": 10143,
-      "name": "tayUSDC",
-      "symbol": "tayUSDC",
+      "name": "Tether USDT",
+      "symbol": "USDT",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/usdt.jpg"
+    },
+    {
+      "address": "0x88b8e2161dedc77ef4ab7585569d2415a1c1055d",
+      "chainId": 10143,
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/usdc.jpg"
+    },
+    {
+      "address": "0xb5a30b0fdc5ea94a52fdc42e3e9760cb8449fb37",
+      "chainId": 10143,
+      "name": "Wrapped ETH",
+      "symbol": "WETH",
       "decimals": 18,
-      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/usdc.png"
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/weth.jpg"
+    },
+    {
+      "address": "0xcf5a6076cfa32686c0df13abada2b40dec133f1d",
+      "chainId": 10143,
+      "name": "Wrapped BTC",
+      "symbol": "WBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/wbtc.jpg"
+    },
+    {
+      "address": "0x369cd1e20fa7ea1f8e6dc0759709ba0bd978abe7",
+      "chainId": 10143,
+      "name": "Wrapped SOL",
+      "symbol": "WSOL",
+      "decimals": 9,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/wsol.jpg"
+    },
+    {
+      "address": "0xafb0d64f308423d16ef8833b901dbdd750554438",
+      "chainId": 10143,
+      "name": "Nomas",
+      "symbol": "NOM",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/nom.jpg"
+    },
+    {
+      "address": "0x04a9d9d4aea93f512a4c7b71993915004325ed38",
+      "chainId": 10143,
+      "name": "Hedgemony",
+      "symbol": "HEDGE",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/hedge.jpg"
+    },
+    {
+      "address": "0x199c0da6f291a897302300aaae4f20d139162916",
+      "chainId": 10143,
+      "name": "Staked Monad",
+      "symbol": "stMON",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/stmon.jpg"
+    },
+    {
+      "address": "0x3b428df09c3508d884c30266ac1577f099313cf6",
+      "chainId": 10143,
+      "name": "Mama BTC",
+      "symbol": "mamaBTC",
+      "decimals": 8,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/mamabtc.jpg"
+    },
+    {
+      "address": "0xfe140e1dce99be9f4f15d657cd9b7bf622270c50",
+      "chainId": 10143,
+      "name": "Moyaki",
+      "symbol": "YAKI",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/yaki.jpg"
+    },
+    {
+      "address": "0xe0590015a873bf326bd645c3e1266d4db41c4e6b",
+      "chainId": 10143,
+      "name": "Chog",
+      "symbol": "CHOG",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/chog.jpg"
+    },
+    {
+      "address": "0x0f0bdebf0f83cd1ee3974779bcb7315f9808c714",
+      "chainId": 10143,
+      "name": "Molandak",
+      "symbol": "DAK",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/dak.jpg"
+    },
+    {
+      "address": "0x1b4cb47622705f0f67b6b18bbd1cb1a91fc77d37",
+      "chainId": 10143,
+      "name": "ShMonad",
+      "symbol": "shMON",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/shmon.jpg"
+    },
+    {
+      "address": "0x07aabd925866e8353407e67c1d157836f7ad923e",
+      "chainId": 10143,
+      "name": "StakedMonad",
+      "symbol": "sMON",
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/smon.jpg"
     }
   ]
 }
