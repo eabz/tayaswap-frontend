@@ -1,7 +1,7 @@
 'use client'
 
 import { useMobile } from '@/hooks'
-import { useSidebarState } from '@/state'
+import { useSidebarStore } from '@/stores'
 import { Flex, HStack, IconButton } from '@chakra-ui/react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { MenuIcon } from '../Icons'
@@ -9,7 +9,7 @@ import { MenuIcon } from '../Icons'
 export const Header = () => {
   const { mobile } = useMobile()
 
-  const { open, setOpen } = useSidebarState()
+  const { open, setOpen } = useSidebarStore()
 
   return (
     <Flex

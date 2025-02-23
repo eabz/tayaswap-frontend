@@ -28,7 +28,7 @@ const monadTestnet = defineChain({
   }
 })
 
-const wagmiConfig = getDefaultConfig({
+export const wagmiConfig = getDefaultConfig({
   appName: 'Taya DEX',
   projectId: 'YOUR_PROJECT_ID',
   chains: [monadTestnet],

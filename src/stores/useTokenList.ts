@@ -18,7 +18,7 @@ const computeFullTokenList = (userList: ITokenListToken[], defaultList: ITokenLi
   return updatedUserList.concat(updatedDefaultList)
 }
 
-export const useTokenListState = create<ITokenListStore>()(
+export const useTokenListStore = create<ITokenListStore>()(
   persist(
     (set, get) => ({
       defaultTokenList: [],

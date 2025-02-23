@@ -1,12 +1,13 @@
 'use client'
 
 import { useTokensList } from '@/services'
-import { useTokenListState } from '@/state'
+import { useTokenListStore } from '@/stores'
 import { useEffect } from 'react'
 
 export function TokenListProvider({ children }: { children: React.ReactNode }) {
   const { data: tokenList, loading, error } = useTokensList()
-  const { setDefaultTokenList } = useTokenListState()
+
+  const { setDefaultTokenList } = useTokenListStore()
 
   useEffect(() => {
     if (loading || error || !tokenList) return
