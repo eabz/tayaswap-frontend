@@ -1,5 +1,5 @@
 'use client'
-import { usePools } from '@/services'
+import { type ITokenListToken, usePools } from '@/services'
 import { useTokenBalancesStore, useTokenListStore } from '@/stores'
 import { useEffect } from 'react'
 import { useAccount } from 'wagmi'
@@ -16,20 +16,35 @@ export function TokenBalancesProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (!address || !pools || loading || error) return
 
-    const poolTokenAddresses = pools.map((pool) => pool.id)
-    if (poolTokenAddresses.length > 0) {
-      reloadPoolBalances(address, poolTokenAddresses)
+    const poolTokenData: { address: string; decimals: number }[] = pools.map((pool) => ({
+      address: pool.id,
+      decimals: 18
+    }))
+
+    if (poolTokenData.length > 0) {
+      reloadPoolBalances(address, poolTokenData)
     }
   }, [address, pools, loading, error, reloadPoolBalances])
 
   useEffect(() => {
     if (!address) return
+
     const mergedTokens = [...(userTokenList || []), ...(defaultTokenList || [])]
 
-    const uniqueAddresses = Array.from(new Set(mergedTokens.map((token) => token.address)))
+    const uniqueTokensMap = new Map<string, ITokenListToken>()
 
-    if (uniqueAddresses.length > 0) {
-      reloadTokenBalances(address, uniqueAddresses)
+    for (let i = 0; i < mergedTokens.length; i++) {
+      const token = mergedTokens[i]
+
+      if (!uniqueTokensMap.has(token.address)) {
+        uniqueTokensMap.set(token.address, token)
+      }
+    }
+
+    const uniqueTokens = Array.from(uniqueTokensMap.values())
+
+    if (uniqueTokens.length > 0) {
+      reloadTokenBalances(address, uniqueTokens)
     }
   }, [address, userTokenList, defaultTokenList, reloadTokenBalances])
 

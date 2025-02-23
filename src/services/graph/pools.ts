@@ -3,7 +3,7 @@ import useSWR from 'swr'
 import { tayaswapSubpgrah } from './constants'
 import { getPoolsQuery } from './queries'
 
-interface IPairTokenData {
+export interface IPairTokenData {
   decimals: string
   id: string
   name: string

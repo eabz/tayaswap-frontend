@@ -1,34 +1,39 @@
 import { wagmiConfig } from '@/providers'
+import type { ITokenBalance } from '@/stores'
 import { ERC20_ABI, chunkArray } from '@/utils'
 import { multicall } from 'wagmi/actions'
 
 export const fetchBalances = async (
   owner: string,
-  tokens: string[],
-  onBatchComplete: (balances: { [address: string]: bigint }) => void
-) => {
+  tokens: { address: string; decimals: number }[],
+  onBatchComplete: (batchBalances: Record<string, ITokenBalance>) => void
+): Promise<Record<string, ITokenBalance>> => {
   const batchSize = 10
 
   const batches = chunkArray(tokens, batchSize)
 
-  let aggregatedBalances: { [address: string]: bigint } = {}
+  let aggregatedBalances: Record<string, ITokenBalance> = {}
 
   for (const batch of batches) {
     try {
       const batchBalances = await getMulticallBalances(owner, batch)
+
       aggregatedBalances = { ...aggregatedBalances, ...batchBalances }
+
       onBatchComplete(aggregatedBalances)
     } catch (error) {
-      console.error('unable to fetch balance for batch', error)
+      console.error('Unable to fetch balance for batch', error)
     }
   }
-
   return aggregatedBalances
 }
 
-export const getMulticallBalances = async (owner: string, tokens: string[]) => {
+export const getMulticallBalances = async (
+  owner: string,
+  tokens: { address: string; decimals: number }[]
+): Promise<Record<string, ITokenBalance>> => {
   const contracts = tokens.map((token) => ({
-    address: token as `0x${string}`,
+    address: token.address as `0x${string}`,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: [owner]
@@ -36,12 +41,15 @@ export const getMulticallBalances = async (owner: string, tokens: string[]) => {
 
   const results = await multicall(wagmiConfig, { contracts })
 
-  return tokens.reduce(
-    (acc, token, index) => {
-      const balance: bigint = (results[index]?.result as bigint) ?? 0n
-      acc[token] = balance
-      return acc
-    },
-    {} as { [address: string]: bigint }
-  )
+  const balances: Record<string, ITokenBalance> = {}
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]
+
+    const balance: bigint = (results[i]?.result as bigint) ?? 0n
+
+    balances[token.address] = { balance, decimals: token.decimals }
+  }
+
+  return balances
 }

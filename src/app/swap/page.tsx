@@ -6,10 +6,8 @@ import { Box, Center } from '@chakra-ui/react'
 
 export default function Page() {
   const { userTokenList, defaultTokenList } = useTokenListStore()
-  console.log(userTokenList, defaultTokenList)
 
   const { tokenBalances } = useTokenBalancesStore()
-  console.log(tokenBalances)
 
   const { mobile } = useMobile()
 
