@@ -6,7 +6,7 @@ import { Flex, HStack, IconButton } from '@chakra-ui/react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { MenuIcon } from '../Icons'
 
-export const Header = () => {
+export function Header() {
   const { mobile } = useMobile()
 
   const { open, setOpen } = useSidebarStore()

@@ -1,5 +1,5 @@
 import type { SWRConfiguration } from 'swr'
-import useSWR from 'swr'
+import useSwr from 'swr'
 
 const TOKENS_LIST =
   'https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokenlist.json'
@@ -27,7 +27,7 @@ interface ITokenListResponse {
   tokens: ITokenListToken[]
 }
 
-const getTokensList = async () => {
+async function getTokensList() {
   const response = await fetch(TOKENS_LIST)
 
   const { tokens }: ITokenListResponse = await response.json()
@@ -40,7 +40,7 @@ export function useTokensList(config?: SWRConfiguration): {
   loading: boolean
   error: boolean
 } {
-  const { data, isLoading: loading, error } = useSWR('tokens_list', () => getTokensList(), config)
+  const { data, isLoading: loading, error } = useSwr('tokens_list', () => getTokensList(), config)
 
   return { data, loading, error: error !== undefined }
 }

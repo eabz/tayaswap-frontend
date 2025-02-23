@@ -6,30 +6,30 @@ import type { Metadata } from 'next'
 import { Inter, Nunito } from 'next/font/google'
 import localFont from 'next/font/local'
 
-const inter = Inter({
+const INTER = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter'
 })
 
-const nunito = Nunito({
+const NUNITO = Nunito({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-nunito'
 })
 
-const geistSans = localFont({
+const GEIST_SANS = localFont({
   src: './fonts/geist.woff',
   variable: '--font-geist-sans',
   weight: '100 900'
 })
-const geistMono = localFont({
+const GEIST_MONO = localFont({
   src: './fonts/geist-mono.woff',
   variable: '--font-geist-mono',
   weight: '100 900'
 })
 
-export const metadata: Metadata = {
+export const METADATA: Metadata = {
   title: 'Taya Finance',
   description: 'TAYA | AMM Dex For Customizable DeFi',
   openGraph: {
@@ -59,7 +59,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${nunito.variable} antialiased`}
+      className={`${GEIST_SANS.variable} ${GEIST_MONO.variable} ${INTER.variable} ${NUNITO.variable} antialiased`}
     >
       <body>
         <GoogleAnalytics gaId={'G-NS2ZG22J02'} />

@@ -4,7 +4,7 @@ import { useColorMode } from '@/hooks'
 import { ClientOnly } from '@chakra-ui/react'
 import Image from 'next/image'
 
-export const SideBarLogo = () => {
+export function SideBarLogo() {
   const { colorMode } = useColorMode()
 
   return (

@@ -9,7 +9,7 @@ import type { ReactNode } from 'react'
 import { defineChain } from 'viem'
 import { WagmiProvider } from 'wagmi'
 
-const monadTestnet = defineChain({
+const MONAD_TESTNET = defineChain({
   id: 10143,
   name: 'Monad Testnet',
   network: 'monad-testnet',
@@ -28,24 +28,24 @@ const monadTestnet = defineChain({
   }
 })
 
-export const wagmiConfig = getDefaultConfig({
+export const WAGMI_CONFIG = getDefaultConfig({
   appName: 'Taya DEX',
   projectId: 'YOUR_PROJECT_ID',
-  chains: [monadTestnet],
+  chains: [MONAD_TESTNET],
   transports: {
-    [monadTestnet.id]: getMonadRpcUrlsFallback()
+    [MONAD_TESTNET.id]: getMonadRpcUrlsFallback()
   },
   ssr: true
 })
 
-const queryClient = new QueryClient()
+const QUERY_CLIENT = new QueryClient()
 
-export const WalletProvider = ({ children }: { children: ReactNode }) => {
+export function WalletProvider({ children }: { children: ReactNode }) {
   const { colorMode } = useColorMode()
 
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
+    <WagmiProvider config={WAGMI_CONFIG}>
+      <QueryClientProvider client={QUERY_CLIENT}>
         <ClientOnly>
           <RainbowKitProvider theme={colorMode === 'dark' ? darkTheme() : lightTheme()} modalSize="compact">
             {children}

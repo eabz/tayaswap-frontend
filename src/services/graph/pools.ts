@@ -1,7 +1,7 @@
 import type { SWRConfiguration } from 'swr'
-import useSWR from 'swr'
+import useSwr from 'swr'
 import { tayaswapSubpgrah } from './constants'
-import { getPoolsQuery } from './queries'
+import { GET_POOLS_QUERY } from './queries'
 
 export interface IPairTokenData {
   decimals: string
@@ -25,8 +25,8 @@ interface IPoolsResponse {
   pairs: IPairData[]
 }
 
-const getPools = async () => {
-  const { pairs } = (await tayaswapSubpgrah(getPoolsQuery, {})) as IPoolsResponse
+async function getPools() {
+  const { pairs } = (await tayaswapSubpgrah(GET_POOLS_QUERY, {})) as IPoolsResponse
 
   return pairs
 }
@@ -36,7 +36,7 @@ export function usePools(config?: SWRConfiguration): {
   loading: boolean
   error: boolean
 } {
-  const { data, isLoading: loading, error } = useSWR('pools', () => getPools(), config)
+  const { data, isLoading: loading, error } = useSwr('pools', () => getPools(), config)
 
   return { data, loading, error: error !== undefined }
 }

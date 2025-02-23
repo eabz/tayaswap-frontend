@@ -17,10 +17,10 @@ interface ITokenBalancesStore {
   getFormattedTokenBalance: (address: string) => string
 }
 
-const reload = (
+function reload(
   key: 'tokenBalances' | 'poolBalances',
   set: (fn: (state: ITokenBalancesStore) => Partial<ITokenBalancesStore>) => void
-) => {
+) {
   return async (owner: string, tokens: { address: string; decimals: number }[]) => {
     await fetchBalances(owner, tokens, (batchBalances) => {
       set((state: ITokenBalancesStore) => ({

@@ -1,6 +1,6 @@
 import { gql } from 'graphql-request'
 
-export const getPoolsQuery = gql`
+export const GET_POOLS_QUERY = gql`
     query GetPools {
         pairs(orderBy: volumeUSD, orderDirection: desc) {
             id

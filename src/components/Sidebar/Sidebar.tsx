@@ -38,7 +38,7 @@ import { CloseIcon } from '../Icons/Close'
 import { Link } from '../Link'
 import { SideBarLogo } from './Logo'
 
-const MenuItems = [
+const MENU_ITEMS = [
   { name: 'Swap', path: '/swap', icon: <SwapIcon h={6} />, enabled: true },
   { name: 'Pools', path: '/pools', icon: <PoolsIcon h={6} />, enabled: true },
   { name: 'Faucet', path: '/faucet', icon: <DropletIcon h={6} />, enabled: false },
@@ -54,7 +54,7 @@ interface IMenuItem {
   enabled: boolean
 }
 
-const MenuItem = ({ name, path, icon, active, enabled }: IMenuItem) => {
+function MenuItem({ name, path, icon, active, enabled }: IMenuItem) {
   const content = (
     <HStack
       py={3}
@@ -120,7 +120,7 @@ export function Sidebar() {
           </DrawerHeader>
           <DrawerBody>
             <VStack separator={<StackSeparator />}>
-              {MenuItems.map((item, i) => (
+              {MENU_ITEMS.map((item, i) => (
                 <MenuItem
                   key={i}
                   name={item.name}

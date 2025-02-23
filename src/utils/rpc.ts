@@ -13,7 +13,7 @@ const MONAD_RPC_ENDPOINTS = [
   'https://monad-testnet.drpc.org'
 ]
 
-export const getMonadRpcUrls = (): IChainRpcUrl => {
+export function getMonadRpcUrls(): IChainRpcUrl {
   const urls: IChainRpcUrl = { default: { http: [MONAD_RPC_ENDPOINTS[0]] } }
 
   for (let i = 1; i < MONAD_RPC_ENDPOINTS.length; i++) {
@@ -23,7 +23,7 @@ export const getMonadRpcUrls = (): IChainRpcUrl => {
   return urls
 }
 
-export const getMonadRpcUrlsFallback = () => {
+export function getMonadRpcUrlsFallback() {
   const urls = []
 
   for (let i = 0; i < MONAD_RPC_ENDPOINTS.length; i++) {

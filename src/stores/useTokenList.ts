@@ -11,7 +11,7 @@ interface ITokenListStore {
   fullTokenList: () => ITokenListToken[]
 }
 
-const computeFullTokenList = (userList: ITokenListToken[], defaultList: ITokenListToken[]): ITokenListToken[] => {
+function computeFullTokenList(userList: ITokenListToken[], defaultList: ITokenListToken[]): ITokenListToken[] {
   const updatedUserList = userList.map((token) => ({ ...token, user: true }))
   const updatedDefaultList = defaultList.map((token) => ({ ...token, user: false }))
 

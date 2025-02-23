@@ -4,7 +4,7 @@ import { useColorMode } from '@/hooks'
 import { ClientOnly, HStack, Skeleton, Switch } from '@chakra-ui/react'
 import { MoonIcon, SunIcon } from '../Icons'
 
-export const ColorModeButton = () => {
+export function ColorModeButton() {
   const { toggleColorMode, colorMode } = useColorMode()
 
   const thumbLabel = {
