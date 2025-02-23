@@ -1,6 +1,7 @@
 import { wagmiConfig } from '@/providers'
 import type { ITokenBalance } from '@/stores'
 import { ERC20_ABI, chunkArray } from '@/utils'
+import { zeroAddress } from 'viem'
 import { multicall } from 'wagmi/actions'
 
 export const fetchBalances = async (
@@ -10,7 +11,9 @@ export const fetchBalances = async (
 ): Promise<Record<string, ITokenBalance>> => {
   const batchSize = 10
 
-  const batches = chunkArray(tokens, batchSize)
+  const filteredTokens = tokens.filter((token) => token.address !== zeroAddress)
+
+  const batches = chunkArray(filteredTokens, batchSize)
 
   let aggregatedBalances: Record<string, ITokenBalance> = {}
 
@@ -25,6 +28,7 @@ export const fetchBalances = async (
       console.error('Unable to fetch balance for batch', error)
     }
   }
+
   return aggregatedBalances
 }
 

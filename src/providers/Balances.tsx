@@ -2,16 +2,19 @@
 import { type ITokenListToken, usePools } from '@/services'
 import { useTokenBalancesStore, useTokenListStore } from '@/stores'
 import { useEffect } from 'react'
-import { useAccount } from 'wagmi'
+import { zeroAddress } from 'viem'
+import { useAccount, useBalance } from 'wagmi'
 
 export function TokenBalancesProvider({ children }: { children: React.ReactNode }) {
   const { address } = useAccount()
+
+  const { data: nativeTokenData, isLoading: loadingNativeTokenBalance } = useBalance({ address })
 
   const { userTokenList, defaultTokenList } = useTokenListStore()
 
   const { data: pools, error, loading } = usePools()
 
-  const { reloadTokenBalances, reloadPoolBalances } = useTokenBalancesStore()
+  const { reloadTokenBalances, reloadPoolBalances, updateTokenBalance } = useTokenBalancesStore()
 
   useEffect(() => {
     if (!address || !pools || loading || error) return
@@ -47,6 +50,12 @@ export function TokenBalancesProvider({ children }: { children: React.ReactNode 
       reloadTokenBalances(address, uniqueTokens)
     }
   }, [address, userTokenList, defaultTokenList, reloadTokenBalances])
+
+  useEffect(() => {
+    if (loadingNativeTokenBalance || !nativeTokenData) return
+
+    updateTokenBalance(zeroAddress, nativeTokenData.value, nativeTokenData.decimals)
+  }, [loadingNativeTokenBalance, nativeTokenData, updateTokenBalance])
 
   return <>{children}</>
 }
