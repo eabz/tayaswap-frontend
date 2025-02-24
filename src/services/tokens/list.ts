@@ -10,7 +10,7 @@ export interface ITokenListToken {
   name: string
   symbol: string
   decimals: number
-  logoURI: string
+  logoURI?: string
   user?: boolean
 }
 

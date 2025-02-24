@@ -10,7 +10,7 @@ export interface IPairTokenData {
   symbol: string
 }
 
-interface IPairData {
+export interface IPairData {
   id: string
   reserve0: string
   reserve1: string
