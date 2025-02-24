@@ -12,17 +12,8 @@ export function Header() {
   const { open, setOpen } = useSidebarStore()
 
   return (
-    <Flex
-      as="nav"
-      align="center"
-      justify="space-between"
-      width="100%"
-      position="absolute"
-      height="80px"
-      bg="menu-bg"
-      zIndex="10"
-    >
-      <HStack width="full" justifyContent={mobile ? 'space-between' : 'end'} px={mobile ? 10 : 20}>
+    <Flex align="center" justify="space-between" width="100%" height="80px" position="absolute" top="0" bg="menu-bg">
+      <HStack width="full" justifyContent={mobile ? 'space-between' : 'end'} px={mobile ? 5 : 20}>
         <IconButton onClick={() => setOpen(!open)} variant="ghost" size="xs" hideFrom="lg">
           <MenuIcon />
         </IconButton>

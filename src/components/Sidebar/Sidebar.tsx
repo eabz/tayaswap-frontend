@@ -99,7 +99,7 @@ export function Sidebar() {
 
   return (
     <Box h="100vh" width="300px">
-      <DrawerRoot open={mobile ? open : true} size="full" placement="start" modal={false}>
+      <DrawerRoot open={mobile ? open : true} placement="start" modal={false}>
         <DrawerContent
           background="menu-bg"
           h="100vh"

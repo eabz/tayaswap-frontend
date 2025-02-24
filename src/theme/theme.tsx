@@ -56,10 +56,22 @@ const SEMANTIC_TOKENS = {
       value: { _light: 'white', _dark: '#141B21' }
     },
     'table-border': {
-      value: { _light: 'white', _dark: '{colors.custom-blue}' }
+      value: { _light: 'white', _dark: '#1D2946' }
     },
     'table-outer-background': {
       value: { _light: 'white', _dark: '#232B3B' }
+    },
+    'modal-background': {
+      value: { _light: 'white', _dark: '#141B21' }
+    },
+    'modal-border': {
+      value: { _light: 'white', _dark: '#1D2946' }
+    },
+    'modal-title-color': {
+      value: { _light: 'black', _dark: 'white' }
+    },
+    'modal-selector-button-background': {
+      value: { _light: '#FAFAFA', _dark: '#131624' }
     }
   }
 }

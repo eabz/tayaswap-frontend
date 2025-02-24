@@ -61,6 +61,7 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
           borderLeft="1px solid"
           borderRight="1px solid"
           borderColor="table-border"
+          background="table-background"
         >
           <ChakraTable.Root>
             <ChakraTable.Header>
@@ -74,11 +75,11 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
                     >
                       <HStack
                         align="center"
-                        justify="center"
+                        justify="start"
                         cursor={header.column.getCanSort() ? 'pointer' : undefined}
                         onClick={header.column.getToggleSortingHandler()}
                       >
-                        <Text>{flexRender(header.column.columnDef.header, header.getContext())}</Text>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
                         <Text>{SORTED_ICONS[(header.column.getIsSorted() as string) ?? '']}</Text>
                       </HStack>
                     </ChakraTable.ColumnHeader>

@@ -70,13 +70,12 @@ export default function RootLayout({
                 <Header />
                 <Sidebar />
                 <Box
+                  background="background"
                   position="absolute"
                   top="80px"
-                  background="background"
-                  h="100vh"
+                  h="calc(100vh - 80px)"
                   width={{ base: 'full', lg: 'calc(100vw - 300px)' }}
-                  zIndex="0"
-                  left={{ base: '0px', lg: '300px' }}
+                  ml={{ base: '0', lg: '300px' }}
                 >
                   {children}
                 </Box>

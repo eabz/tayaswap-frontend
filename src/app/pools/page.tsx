@@ -1,12 +1,13 @@
 'use client'
 
-import { ActionButton, Input, PlusIcon, SearchIcon, Table, TokenIcon } from '@/components'
+import { ActionButton, Input, ManagePoolModal, PlusIcon, SearchIcon, Table, TokenIcon } from '@/components'
 import { type IPairData, usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
 import { Box, Button, ButtonGroup, GridItem, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table'
 import { matchSorter } from 'match-sorter'
 import { useMemo, useState } from 'react'
+import { useAccount } from 'wagmi'
 
 interface IPoolData {
   id: string
@@ -45,7 +46,10 @@ const PARSE_POOL = (pool: IPairData, index: number): IPoolData => ({
 
 export default function Page() {
   const { data: pools, loading, error } = usePools()
-  const { poolBalances } = useTokenBalancesStore()
+
+  const { poolBalances, reloadPoolBalances } = useTokenBalancesStore()
+
+  const { address } = useAccount()
 
   const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined)
 
@@ -81,15 +85,19 @@ export default function Page() {
   const columns = useMemo(() => {
     return [
       columnHelper.accessor('poolNumber', {
-        header: () => '#',
+        header: () => (
+          <HStack justifyContent="center" width="full">
+            #
+          </HStack>
+        ),
         cell: (info) => <HStack justifyContent="center">{info.getValue() as number}</HStack>,
-        size: 5,
+        maxSize: 5,
         enableSorting: false
       }),
       columnHelper.accessor('poolName', {
         header: () => 'Pool',
         cell: (info) => (
-          <HStack justifyContent="start" alignItems="center">
+          <HStack justifyContent="start" alignItems="start">
             <HStack>
               <TokenIcon marginRight="-4" token={info.row.original.token0} />
               <TokenIcon token={info.row.original.token1} />
@@ -97,25 +105,38 @@ export default function Page() {
             {info.getValue() as string}
           </HStack>
         ),
-        size: 20,
+        size: 30,
         enableSorting: false
       }),
       columnHelper.accessor('reserveUSD', {
-        header: () => 'TVL',
-        cell: (info) => <HStack justifyContent="center">{info.getValue() as number} USD</HStack>,
-        size: 50
+        header: () => (
+          <HStack justifyContent="end" width="full">
+            TVL
+          </HStack>
+        ),
+        cell: (info) => <HStack justifyContent="end">{info.getValue().toLocaleString()} USD</HStack>,
+        minSize: 50
       }),
       columnHelper.accessor('volumeUSD', {
-        header: () => 'Volume',
-        cell: (info) => <HStack justifyContent="center">{info.getValue() as number} USD</HStack>,
-        size: 50
+        header: () => (
+          <HStack justifyContent="end" width="full">
+            Volume
+          </HStack>
+        ),
+        cell: (info) => <HStack justifyContent="end">{info.getValue().toLocaleString()} USD</HStack>,
+        minSize: 50
       }),
       columnHelper.accessor('id', {
-        header: () => 'Action',
+        header: () => (
+          <HStack justifyContent="center" width="full">
+            Action
+          </HStack>
+        ),
         cell: (info) => (
-          <Box position="relative" height="32px">
-            <Stack height="full" justifyContent="center" alignItems="center">
+          <Box height="32px">
+            <Stack height="full" justifyContent="end" alignItems="center">
               <ActionButton
+                disabled={!address}
                 text="Manage"
                 rounded="full"
                 height="32px"
@@ -126,68 +147,97 @@ export default function Page() {
             </Stack>
           </Box>
         ),
-        size: 10,
+        minSize: 30,
         enableSorting: false
       })
     ]
-  }, [columnHelper]) as ColumnDef<IPoolData>[]
+  }, [columnHelper, address]) as ColumnDef<IPoolData>[]
 
   const handlePoolCreate = () => {}
 
+  const [managePoolOpen, setManagePoolOpen] = useState(false)
+
+  const [managePoolId, setManagePoolId] = useState<IPairData | undefined>(undefined)
+
   const handlePoolManage = (id: string) => {
-    console.log(id)
+    if (!pools) return
+
+    setManagePoolOpen(true)
+
+    const pair = pools.find((pool) => pool.id === id)
+    if (!pair) return
+
+    setManagePoolId(pair)
+  }
+
+  const handlePoolManageClose = async () => {
+    if (!address || !managePoolId) return
+
+    await reloadPoolBalances(address, [{ address: managePoolId.id, decimals: 18 }])
+
+    setManagePoolId(undefined)
   }
 
   return (
-    <Box pt="15px" mx={{ base: '15px', md: '20px', xl: '100px' }}>
-      <SimpleGrid width="full" columns={{ base: 2, lg: 3 }} gapY="15px" gapX="20px">
-        <GridItem colSpan={1}>
-          <Box background="button-group-background" rounded="full" p="1.5" width="195px">
-            <ButtonGroup size="sm" variant="ghost">
-              <Button
+    <>
+      {managePoolId && (
+        <ManagePoolModal
+          open={managePoolOpen}
+          pool={managePoolId}
+          onClose={handlePoolManageClose}
+          close={() => setManagePoolOpen(false)}
+        />
+      )}
+      <Box pt="15px" mx={{ base: '15px', md: '20px', xl: '100px' }}>
+        <SimpleGrid width="full" columns={{ base: 2, lg: 3 }} gapY="15px" gapX="20px">
+          <GridItem colSpan={1}>
+            <Box background="button-group-background" rounded="full" p="1.5" width="195px">
+              <ButtonGroup size="sm" variant="ghost">
+                <Button
+                  rounded="full"
+                  onClick={() => setAllPools(true)}
+                  background={allPools ? 'button-group-button-background' : undefined}
+                  color={allPools ? 'button-group-button-active-color' : 'button-group-button-color'}
+                >
+                  <Text>All Pools</Text>
+                </Button>
+                <Button
+                  rounded="full"
+                  onClick={() => setAllPools(false)}
+                  background={allPools ? undefined : 'button-group-button-background'}
+                  color={allPools ? 'button-group-button-color' : 'button-group-button-active-color'}
+                >
+                  <Text>My Pools</Text>
+                </Button>
+              </ButtonGroup>
+            </Box>
+          </GridItem>
+          <GridItem colSpan={1}>
+            <HStack width="full" justifyContent="end">
+              <ActionButton
+                text="Create Pool"
+                onClickHandler={handlePoolCreate}
                 rounded="full"
-                onClick={() => setAllPools(true)}
-                background={allPools ? 'button-group-button-background' : undefined}
-                color={allPools ? 'button-group-button-active-color' : 'button-group-button-color'}
-              >
-                <Text>All Pools</Text>
-              </Button>
-              <Button
-                rounded="full"
-                onClick={() => setAllPools(false)}
-                background={allPools ? undefined : 'button-group-button-background'}
-                color={allPools ? 'button-group-button-color' : 'button-group-button-active-color'}
-              >
-                <Text>My Pools</Text>
-              </Button>
-            </ButtonGroup>
-          </Box>
-        </GridItem>
-        <GridItem colSpan={1}>
-          <HStack width="full" justifyContent="end">
-            <ActionButton
-              text="Create Pool"
-              onClickHandler={handlePoolCreate}
-              rounded="full"
-              icon={<PlusIcon h="5" />}
-            />
-          </HStack>
-        </GridItem>
-        <GridItem colSpan={{ base: 2, lg: 1 }}>
-          <HStack width="full" justifyContent="center">
-            <Input
-              placeholder="Search assets or address."
-              size="md"
-              type="text"
-              minWidth="full"
-              onChangeHandler={handleSearch}
-              icon={<SearchIcon h="5" />}
-            />
-          </HStack>
-        </GridItem>
-      </SimpleGrid>
+                icon={<PlusIcon h="5" />}
+              />
+            </HStack>
+          </GridItem>
+          <GridItem colSpan={{ base: 2, lg: 1 }}>
+            <HStack width="full" justifyContent="center">
+              <Input
+                placeholder="Search assets or address."
+                size="md"
+                type="text"
+                minWidth="full"
+                onChangeHandler={handleSearch}
+                icon={<SearchIcon h="5" />}
+              />
+            </HStack>
+          </GridItem>
+        </SimpleGrid>
 
-      <Table columns={columns} loading={loading} data={allPools ? filteredAllPoolData : filteredUserPoolData} />
-    </Box>
+        <Table columns={columns} loading={loading} data={allPools ? filteredAllPoolData : filteredUserPoolData} />
+      </Box>
+    </>
   )
 }
