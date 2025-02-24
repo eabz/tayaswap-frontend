@@ -1,8 +1,9 @@
 'use client'
 
 import { ActionButton, Input, ManagePoolModal, PlusIcon, SearchIcon, Table, TokenIcon } from '@/components'
+import { CreatePoolsModal } from '@/components/Modals/CreatePool'
 import { type IPairData, usePools } from '@/services'
-import { useTokenBalancesStore } from '@/stores'
+import { useTokenBalancesStore, useTokenListStore } from '@/stores'
 import { Box, Button, ButtonGroup, GridItem, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table'
 import { matchSorter } from 'match-sorter'
@@ -47,7 +48,9 @@ const PARSE_POOL = (pool: IPairData, index: number): IPoolData => ({
 export default function Page() {
   const { data: pools, loading, error } = usePools()
 
-  const { poolBalances, reloadPoolBalances } = useTokenBalancesStore()
+  const { fullTokenList } = useTokenListStore()
+
+  const { poolBalances, reloadPoolBalances, reloadTokenBalances } = useTokenBalancesStore()
 
   const { address } = useAccount()
 
@@ -153,7 +156,34 @@ export default function Page() {
     ]
   }, [columnHelper, address]) as ColumnDef<IPoolData>[]
 
-  const handlePoolCreate = () => {}
+  const [createPoolOpen, setCreatePoolOpen] = useState(false)
+
+  const handlePoolCreate = () => {
+    setCreatePoolOpen(true)
+  }
+
+  const handleCreatePoolsClose = async (
+    token0: string | undefined,
+    token1: string | undefined,
+    newPool: string | undefined
+  ) => {
+    if (!token0 || !token1 || !newPool || !address) return
+
+    const tokenList = fullTokenList()
+
+    const token0Data = tokenList.find((token) => token.address === token0)
+
+    const token1Data = tokenList.find((token) => token.address === token1)
+
+    if (!token0Data || !token1Data) return
+
+    await reloadTokenBalances(address, [
+      { address: token0, decimals: token0Data.decimals },
+      { address: token1, decimals: token1Data.decimals }
+    ])
+
+    await reloadPoolBalances(address, [{ address: newPool, decimals: 8 }])
+  }
 
   const [managePoolOpen, setManagePoolOpen] = useState(false)
 
@@ -180,6 +210,7 @@ export default function Page() {
 
   return (
     <>
+      <CreatePoolsModal open={createPoolOpen} close={() => setCreatePoolOpen(false)} onClose={handleCreatePoolsClose} />
       {managePoolId && (
         <ManagePoolModal
           open={managePoolOpen}
