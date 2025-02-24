@@ -66,9 +66,21 @@ export default function RootLayout({
         <ThemeProvider>
           <WalletProvider>
             <StateProvider>
-              <Header />
-              <Sidebar />
-              <Box>{children}</Box>
+              <main>
+                <Header />
+                <Sidebar />
+                <Box
+                  position="absolute"
+                  top="80px"
+                  background="background"
+                  h="100vh"
+                  width={{ base: 'full', lg: 'calc(100vw - 300px)' }}
+                  zIndex="0"
+                  left={{ base: '0px', lg: '300px' }}
+                >
+                  {children}
+                </Box>
+              </main>
             </StateProvider>
           </WalletProvider>
         </ThemeProvider>

@@ -61,13 +61,13 @@ function MenuItem({ name, path, icon, active, enabled }: IMenuItem) {
       px={5}
       width="full"
       spaceX={5}
-      background={active ? 'blue' : 'none'}
+      background={active ? 'custom-blue' : 'none'}
       color={active ? 'white' : ''}
       rounded="full"
-      _hover={{ background: 'blue', color: 'white' }}
+      _hover={{ background: 'custom-blue', color: 'white' }}
     >
       {icon}
-      <Text fontSize="md" fontWeight="500">
+      <Text fontSize="18px" fontWeight="600">
         {name}
       </Text>
     </HStack>
