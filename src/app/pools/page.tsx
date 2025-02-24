@@ -1,12 +1,12 @@
 'use client'
 
 import { ActionButton, Input, PlusIcon, SearchIcon, Table, TokenIcon } from '@/components'
-import { Box, Button, ButtonGroup, GridItem, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
-
 import { usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
+import { Box, Button, ButtonGroup, GridItem, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { createColumnHelper } from '@tanstack/react-table'
+import { matchSorter } from 'match-sorter'
+import { useEffect, useState } from 'react'
 
 interface IPoolData {
   id: string
@@ -14,8 +14,22 @@ interface IPoolData {
   poolName: string
   volumeUSD: number
   reserveUSD: number
+  token0Symbol: string
+  token0Name: string
   token0: string
+  token1Symbol: string
+  token1Name: string
   token1: string
+}
+
+const FILTER_POOLS = (pools: IPoolData[], query: string | undefined): IPoolData[] => {
+  if (!query) return pools
+
+  const filtered = matchSorter(pools, query, {
+    keys: ['token0', 'token1', 'token1Symbol', 'token1Name', 'token0Symbol', 'token0Name']
+  })
+
+  return filtered
 }
 
 export default function Page() {
@@ -29,8 +43,21 @@ export default function Page() {
 
   const { poolBalances } = useTokenBalancesStore()
 
+  const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined)
+
+  const handleSearch = (value: string) => {
+    if (value === '') {
+      setSearchQuery(undefined)
+
+      return
+    }
+
+    setSearchQuery(value)
+  }
+
   useEffect(() => {
     if (!poolBalances || !pools || loading || error) return
+
     const cleanBalances = Object.fromEntries(
       // biome-ignore lint/style/useNamingConvention: find a way to ignore variables
       Object.entries(poolBalances).filter(([_, token]) => token.balance !== 0n)
@@ -48,18 +75,20 @@ export default function Page() {
         volumeUSD: Number.parseFloat(pool.volumeUSD),
         reserveUSD: Number.parseFloat(pool.reserveUSD),
         token0: pool.token0.id,
-        token1: pool.token1.id
+        token0Symbol: pool.token0.symbol,
+        token0Name: pool.token0.name,
+        token1: pool.token1.id,
+        token1Symbol: pool.token1.symbol,
+        token1Name: pool.token1.name
       }
     })
 
-    setUserPools(poolsParsed)
-  }, [poolBalances, pools, loading, error])
+    const filtered = FILTER_POOLS(poolsParsed, searchQuery)
+
+    setUserPools(filtered)
+  }, [poolBalances, pools, loading, error, searchQuery])
 
   const [allPools, setAllPools] = useState(true)
-
-  const handleSearch = (value: string) => {}
-
-  const handlePoolCreate = () => {}
 
   useEffect(() => {
     if (!pools || loading || error) return
@@ -72,12 +101,20 @@ export default function Page() {
         volumeUSD: Number.parseFloat(pool.volumeUSD),
         reserveUSD: Number.parseFloat(pool.reserveUSD),
         token0: pool.token0.id,
-        token1: pool.token1.id
+        token0Symbol: pool.token0.symbol,
+        token0Name: pool.token0.name,
+        token1: pool.token1.id,
+        token1Symbol: pool.token1.symbol,
+        token1Name: pool.token1.name
       }
     })
 
-    setPoolData(poolsParsed)
-  }, [pools, loading, error])
+    const filtered = FILTER_POOLS(poolsParsed, searchQuery)
+
+    setPoolData(filtered)
+  }, [pools, loading, error, searchQuery])
+
+  const handlePoolCreate = () => {}
 
   const handlePoolManage = (id: string) => {
     console.log(id)
