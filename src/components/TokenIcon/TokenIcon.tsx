@@ -2,14 +2,14 @@
 
 import type { ITokenListToken } from '@/services'
 import { useTokenListStore } from '@/stores'
-import { Avatar, type AvatarRootProps } from '@chakra-ui/react'
+import Image from 'next/image'
 import { useMemo } from 'react'
 
-interface ITokenIcon extends AvatarRootProps {
+interface ITokenIcon {
   token: string
 }
 
-export function TokenIcon({ token, ...props }: ITokenIcon) {
+export function TokenIcon({ token }: ITokenIcon) {
   const { defaultTokenList } = useTokenListStore()
 
   const image = useMemo(() => {
@@ -22,9 +22,5 @@ export function TokenIcon({ token, ...props }: ITokenIcon) {
     return tokenListData.logoURI
   }, [token, defaultTokenList])
 
-  return (
-    <Avatar.Root size="xs" {...props}>
-      <Avatar.Image src={image} />
-    </Avatar.Root>
-  )
+  return <Image fill src={image} alt="Token Icon Image" sizes="(max-width: 50px)" />
 }

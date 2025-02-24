@@ -1,9 +1,17 @@
 import type { NextConfig } from 'next'
 
-const nextConfig: NextConfig = {
+const NEXT_CONFIG: NextConfig = {
   experimental: {
     optimizePackageImports: ['@chakra-ui/react']
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com'
+      }
+    ]
   }
 }
 
-export default nextConfig
+export default NEXT_CONFIG

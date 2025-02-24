@@ -1,6 +1,6 @@
 'use client'
 
-import { ActionButton, Input, ManagePoolModal, PlusIcon, SearchIcon, Table, TokenIcon } from '@/components'
+import { ActionButton, Input, ManagePoolModal, PlusIcon, SearchIcon, Table, TokenIconGroup } from '@/components'
 import { CreatePoolsModal } from '@/components/Modals/CreatePool'
 import { type IPairData, usePools } from '@/services'
 import { useTokenBalancesStore, useTokenListStore } from '@/stores'
@@ -100,11 +100,8 @@ export default function Page() {
       columnHelper.accessor('poolName', {
         header: () => 'Pool',
         cell: (info) => (
-          <HStack justifyContent="start" alignItems="start">
-            <HStack>
-              <TokenIcon marginRight="-4" token={info.row.original.token0} />
-              <TokenIcon token={info.row.original.token1} />
-            </HStack>
+          <HStack justifyContent="start" alignItems="center">
+            <TokenIconGroup size="35px" token0={info.row.original.token0} token1={info.row.original.token1} />
             {info.getValue() as string}
           </HStack>
         ),

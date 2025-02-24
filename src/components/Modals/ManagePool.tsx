@@ -1,6 +1,10 @@
 'use client'
 
+import { useTayaSwapRouter } from '@/hooks'
+import { usePermitSignature } from '@/hooks/usePermit'
 import type { IPairData } from '@/services'
+import { useTokenBalancesStore } from '@/stores'
+import { ROUTER_ADDRESS, WETH_ADDRESS, formatTokenBalance } from '@/utils'
 import {
   Box,
   Button,
@@ -18,8 +22,13 @@ import {
   VStack
 } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { parseUnits } from 'viem'
+import { useAccount, useWalletClient } from 'wagmi'
+import { ActionButton, SubmitButton } from '../Buttons'
 import { ChevronLeftIcon, CloseIcon } from '../Icons'
+import { Slider } from '../Slider'
+import { TokenIconGroup } from '../TokenIcon'
 
 export interface IManagePoolModalProps {
   pool: IPairData
@@ -49,13 +58,142 @@ const VARIANTS = {
   })
 }
 
+export function calculateWithdrawAmounts(
+  userBalance: string,
+  totalSupply: string,
+  token0: { reserve: string; decimals: string },
+  token1: { reserve: string; decimals: string }
+): { amountToken0: string; amountToken1: string } {
+  if (totalSupply === '0') {
+    return { amountToken0: '0', amountToken1: '0' }
+  }
+
+  const userLiquidity = parseUnits(userBalance, 18)
+  const totalSupplyAmount = parseUnits(totalSupply, 18)
+
+  const token0Decimals = Number.parseInt(token0.decimals)
+  const token1Decimals = Number.parseInt(token1.decimals)
+
+  const token0Reserve = parseUnits(token0.reserve, token0Decimals)
+  const token1Reserve = parseUnits(token1.reserve, token1Decimals)
+
+  return {
+    amountToken0: formatTokenBalance((userLiquidity * token0Reserve) / totalSupplyAmount, token0Decimals),
+    amountToken1: formatTokenBalance((userLiquidity * token1Reserve) / totalSupplyAmount, token1Decimals)
+  }
+}
+
 export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModalProps) {
   const [view, setView] = useState(View.Selector)
+
   const [direction, setDirection] = useState(0)
+
+  const { data: walletClient } = useWalletClient()
+
+  const { address, chainId } = useAccount()
+
+  const { getPermitSignature } = usePermitSignature({ chainId, tokenAddress: pool.id, owner: address })
+
+  const { removeLiquidity, removeLiquidityETHWithPermit } = useTayaSwapRouter()
+
+  const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
 
   const changeView = (newView: View) => {
     setDirection(newView > view ? 1 : -1)
     setView(newView)
+  }
+
+  const { amountToken0, amountToken1 } = calculateWithdrawAmounts(
+    getFormattedPoolBalance(pool.id),
+    pool.totalSupply,
+    { reserve: pool.reserve0, decimals: pool.token0.decimals },
+    { reserve: pool.reserve1, decimals: pool.token1.decimals }
+  )
+
+  const [withdrawValue, setWithdrawValue] = useState(50)
+
+  const handleSliderChange = (value: number) => {
+    setWithdrawValue(value)
+  }
+
+  const amount0Withdraw = useMemo(() => {
+    const token0Balance = parseUnits(amountToken0, Number.parseInt(pool.token0.decimals))
+    const percentage = BigInt(withdrawValue)
+
+    return (token0Balance * percentage) / BigInt(100)
+  }, [amountToken0, pool.token0.decimals, withdrawValue])
+
+  const amount1Withdraw = useMemo(() => {
+    const token1Balance = parseUnits(amountToken1, Number.parseInt(pool.token1.decimals))
+    const percentage = BigInt(withdrawValue)
+
+    return (token1Balance * percentage) / BigInt(100)
+  }, [amountToken1, pool.token1.decimals, withdrawValue])
+
+  const poolBalanceWithdraw = useMemo(() => {
+    const percentage = BigInt(withdrawValue)
+
+    return (poolBalances[pool.id].balance * percentage) / BigInt(100)
+  }, [poolBalances, withdrawValue, pool.id])
+
+  const [loadingWithdrawal, setLoadingWithdrawal] = useState(false)
+
+  const [signature, setSignature] = useState<{ v: bigint | undefined; r: `0x${string}`; s: `0x${string}` } | undefined>(
+    undefined
+  )
+
+  const handleWithdraw = async () => {
+    const slippage = 5
+
+    if (!address || !walletClient || !signature || !signature.v) return
+
+    setLoadingWithdrawal(true)
+
+    try {
+      if (pool.token0.id === WETH_ADDRESS || pool.token1.id === WETH_ADDRESS) {
+        const token = pool.token0.id === WETH_ADDRESS ? pool.token1 : pool.token0
+
+        await removeLiquidityETHWithPermit(
+          token,
+          poolBalanceWithdraw,
+          slippage,
+          address,
+          walletClient,
+          pool,
+          false,
+          signature.v,
+          signature.r,
+          signature.s
+        )
+      } else {
+        await removeLiquidity(pool.token0, pool.token1, poolBalanceWithdraw, slippage, address, walletClient, pool)
+      }
+    } catch (e) {
+      new Error(`error: ${e}`)
+    }
+
+    setLoadingWithdrawal(false)
+    close()
+  }
+
+  const handleSign = async () => {
+    if (!walletClient || !chainId || !address) return
+
+    setLoadingWithdrawal(true)
+
+    try {
+      const signature = await getPermitSignature(chainId, pool.id, {
+        owner: address,
+        spender: ROUTER_ADDRESS,
+        value: poolBalanceWithdraw
+      })
+
+      setSignature(signature)
+    } catch (e) {
+      new Error(`error: ${e}`)
+    }
+
+    setLoadingWithdrawal(false)
   }
 
   return (
@@ -101,7 +239,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
               </HStack>
             </DialogHeader>
             <DialogBody>
-              <Box height="250px" position="relative" overflow="hidden">
+              <Box height={view === View.Selector ? '250px' : '350px'} position="relative" overflow="hidden">
                 <AnimatePresence initial={false} custom={direction}>
                   {view === View.Selector && (
                     <motion.div
@@ -177,7 +315,97 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
                       transition={{ duration: 0.3 }}
                       style={{ position: 'absolute', width: '100%' }}
                     >
-                      <Text textAlign="center">Remove Liquidity Content</Text>
+                      <VStack width="full" gap="10px">
+                        <HStack justifyContent="space-between" width="full" px="5">
+                          <Text fontSize="14px" fontWeight="400">
+                            Your position
+                          </Text>
+                          <HStack alignItems="center">
+                            <TokenIconGroup token0={pool.token0.id} token1={pool.token1.id} size="25px" />
+                            <Text fontSize="xs" fontWeight="400">
+                              {pool.token0.symbol}/{pool.token1.symbol}
+                            </Text>
+                          </HStack>
+                        </HStack>
+                        <HStack
+                          background="modal-selector-button-background"
+                          height="100px"
+                          width="full"
+                          borderRadius="10px"
+                          px="5"
+                          justifyContent="space-between"
+                        >
+                          <VStack>
+                            <Text>{pool.token0.symbol}</Text>
+                            <Text color="custom-green">{amountToken0}</Text>
+                          </VStack>
+                          <VStack>
+                            <Text>{pool.token1.symbol}</Text>
+                            <Text color="custom-green">{amountToken1}</Text>
+                          </VStack>
+                          <VStack>
+                            <Text>Pool Tokens</Text>
+                            <Text color="custom-green">{getFormattedPoolBalance(pool.id)}</Text>
+                          </VStack>
+                        </HStack>
+                        <HStack justifyContent="space-between" width="full" px="5">
+                          <Text fontSize="14px" fontWeight="400">
+                            Withdraw Amount
+                          </Text>
+                        </HStack>
+                        <HStack justifyContent="start" width="full" px="5">
+                          <Text fontSize="20px" fontWeight="600" color="modal-title-color">
+                            {withdrawValue}%
+                          </Text>
+                        </HStack>
+                        <Box width="full">
+                          <Slider value={withdrawValue} onChange={handleSliderChange} />
+                        </Box>
+                        <HStack justifyContent="space-between" alignItems="center" width="full" px="5">
+                          <ActionButton
+                            text="25%"
+                            rounded="full"
+                            height="25px"
+                            width="60px"
+                            size="xs"
+                            onClickHandler={() => setWithdrawValue(25)}
+                          />
+                          <ActionButton
+                            text="50%"
+                            rounded="full"
+                            height="25px"
+                            width="60px"
+                            size="xs"
+                            onClickHandler={() => setWithdrawValue(50)}
+                          />
+                          <ActionButton
+                            text="75%"
+                            rounded="full"
+                            height="25px"
+                            width="60px"
+                            size="xs"
+                            onClickHandler={() => setWithdrawValue(75)}
+                          />
+                          <ActionButton
+                            text="100%"
+                            rounded="full"
+                            height="25px"
+                            width="60px"
+                            size="xs"
+                            onClickHandler={() => setWithdrawValue(100)}
+                          />
+                        </HStack>
+                        <Box width="full" mt="5">
+                          <SubmitButton
+                            onClickHandler={signature ? handleWithdraw : handleSign}
+                            text={signature ? 'Withdraw' : 'Sign'}
+                            loading={loadingWithdrawal}
+                            disabled={amount0Withdraw === 0n || amount1Withdraw === 0n}
+                            width="full"
+                            px="5"
+                          />
+                        </Box>
+                      </VStack>
                     </motion.div>
                   )}
                 </AnimatePresence>

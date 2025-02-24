@@ -3,6 +3,7 @@ import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react'
 const TOKENS = {
   colors: {
     'custom-blue': { value: '#0C68E9' },
+    'custom-green': { value: '#32AE60' },
     'custom-gray': {
       100: { value: '#FAFAFA' },
       200: { value: '#F5F5F5' },
