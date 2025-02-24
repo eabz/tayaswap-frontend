@@ -5,6 +5,7 @@ import { Box, Button, ButtonGroup, GridItem, HStack, SimpleGrid, Stack, Text } f
 import { useEffect, useState } from 'react'
 
 import { usePools } from '@/services'
+import { useTokenBalancesStore } from '@/stores'
 import { createColumnHelper } from '@tanstack/react-table'
 
 interface IPoolData {
@@ -24,7 +25,35 @@ export default function Page() {
 
   const [poolData, setPoolData] = useState<IPoolData[]>([])
 
-  //const { poolBalances } = useTokenBalancesStore()
+  const [userPools, setUserPools] = useState<IPoolData[]>([])
+
+  const { poolBalances } = useTokenBalancesStore()
+
+  useEffect(() => {
+    if (!poolBalances || !pools || loading || error) return
+    const cleanBalances = Object.fromEntries(
+      // biome-ignore lint/style/useNamingConvention: find a way to ignore variables
+      Object.entries(poolBalances).filter(([_, token]) => token.balance !== 0n)
+    )
+
+    const userPools = Object.keys(cleanBalances)
+
+    const userPoolsFiltered = pools.filter((pool) => userPools.indexOf(pool.id) !== -1)
+
+    const poolsParsed: IPoolData[] = userPoolsFiltered.map((pool, i) => {
+      return {
+        poolNumber: i + 1,
+        poolName: `${pool.token0.symbol}/${pool.token1.symbol}`,
+        id: pool.id,
+        volumeUSD: Number.parseFloat(pool.volumeUSD),
+        reserveUSD: Number.parseFloat(pool.reserveUSD),
+        token0: pool.token0.id,
+        token1: pool.token1.id
+      }
+    })
+
+    setUserPools(poolsParsed)
+  }, [poolBalances, pools, loading, error])
 
   const [allPools, setAllPools] = useState(true)
 
@@ -156,7 +185,7 @@ export default function Page() {
         </GridItem>
       </SimpleGrid>
 
-      <Table columns={columns} loading={true} data={poolData} />
+      <Table columns={columns} loading={loading} data={allPools ? poolData : userPools} />
     </Box>
   )
 }

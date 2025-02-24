@@ -1,6 +1,6 @@
 'use client'
 
-import { Table as ChakraTable, Flex, HStack, Stack, Text } from '@chakra-ui/react'
+import { Table as ChakraTable, Flex, HStack, Skeleton, Stack, Text } from '@chakra-ui/react'
 import {
   type ColumnDef,
   type SortingState,
@@ -36,17 +36,7 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
 
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const {
-    getState,
-    getCanNextPage,
-    getCanPreviousPage,
-    getPageCount,
-    nextPage,
-    previousPage,
-    getRowModel,
-    getCenterTotalSize,
-    getHeaderGroups
-  } = useReactTable({
+  const table = useReactTable({
     columns,
     data: tableData,
     getCoreRowModel: getCoreRowModel(),
@@ -59,15 +49,15 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
   })
 
   const renderPagination = () => {
-    const page = getState().pagination.pageIndex + 1
-    const total = getPageCount()
+    const page = table.getState().pagination.pageIndex + 1
+    const total = table.getPageCount()
 
     return total > 0 ? `Page ${page} of ${total}` : ''
   }
 
   return (
     <Stack my="5">
-      <Flex alignItems="center" flexDirection="column" style={{ minWidth: getCenterTotalSize(), width: '100%' }}>
+      <Flex alignItems="center" flexDirection="column" style={{ minWidth: table.getCenterTotalSize(), width: '100%' }}>
         <ChakraTable.ScrollArea
           roundedTop="25px"
           width="full"
@@ -78,7 +68,7 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
         >
           <ChakraTable.Root>
             <ChakraTable.Header>
-              {getHeaderGroups().map((headerGroup) => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <ChakraTable.Row key={headerGroup.id} background="table-outer-background">
                   {headerGroup.headers.map((header) => (
                     <ChakraTable.ColumnHeader
@@ -90,12 +80,10 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
                         alignItems="center"
                         justifyContent="center"
                         cursor={header.column.getCanSort() ? 'pointer' : undefined}
-                        {...{
-                          onClick: header.column.getToggleSortingHandler()
-                        }}
+                        onClick={header.column.getToggleSortingHandler()}
                       >
                         <Text>{flexRender(header.column.columnDef.header, header.getContext())}</Text>
-                        <Text>{SORTED_ICONS[(header.column.getIsSorted() as string) ?? null]}</Text>
+                        <Text>{SORTED_ICONS[(header.column.getIsSorted() as string) ?? '']}</Text>
                       </HStack>
                     </ChakraTable.ColumnHeader>
                   ))}
@@ -103,19 +91,29 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
               ))}
             </ChakraTable.Header>
             <ChakraTable.Body>
-              {getRowModel().rows.map((row) => {
-                return (
-                  <ChakraTable.Row key={row.id} background="table-background">
-                    {row.getVisibleCells().map((cell) => {
-                      return (
-                        <ChakraTable.Cell key={cell.id} style={{ width: cell.column.getSize() }}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              {loading
+                ? // biome-ignore lint/style/useNamingConvention: find a way to ignore variables
+                  Array.from({ length: 5 }).map((_, rowIndex) => (
+                    <ChakraTable.Row key={`skeleton-${rowIndex}`} background="table-background">
+                      {table.getHeaderGroups()[0]?.headers.map((header, cellIndex) => (
+                        <ChakraTable.Cell key={`skeleton-${rowIndex}-${cellIndex}`} style={{ width: header.getSize() }}>
+                          <Skeleton height="20px" />
                         </ChakraTable.Cell>
-                      )
-                    })}
-                  </ChakraTable.Row>
-                )
-              })}
+                      ))}
+                    </ChakraTable.Row>
+                  ))
+                : // Render actual rows
+                  table
+                    .getRowModel()
+                    .rows.map((row) => (
+                      <ChakraTable.Row key={row.id} background="table-background">
+                        {row.getVisibleCells().map((cell) => (
+                          <ChakraTable.Cell key={cell.id} style={{ width: cell.column.getSize() }}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </ChakraTable.Cell>
+                        ))}
+                      </ChakraTable.Row>
+                    ))}
             </ChakraTable.Body>
           </ChakraTable.Root>
         </ChakraTable.ScrollArea>
@@ -136,20 +134,20 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
           mt="0"
         >
           <IconActionButton
-            disabled={!getCanPreviousPage()}
+            disabled={!table.getCanPreviousPage()}
             rounded="full"
             height="32px"
             icon={<ChevronLeftIcon height="4" width="4" />}
-            onClickHandler={() => previousPage()}
+            onClickHandler={() => table.previousPage()}
           />
 
           <Text>{renderPagination()}</Text>
           <IconActionButton
-            disabled={!getCanNextPage()}
+            disabled={!table.getCanNextPage()}
             rounded="full"
             height="32px"
             icon={<ChevronRightIcon height="4" width="4" />}
-            onClickHandler={() => nextPage()}
+            onClickHandler={() => table.nextPage()}
           />
         </Flex>
       </Flex>
