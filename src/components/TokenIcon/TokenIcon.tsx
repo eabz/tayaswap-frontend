@@ -16,7 +16,7 @@ export function TokenIcon({ token, ...props }: ITokenIcon) {
     const tokenListData: ITokenListToken | undefined = defaultTokenList.find(
       (listToken) => listToken.address.toLowerCase() === token.toLowerCase()
     )
-    console.log(tokenListData)
+
     if (!tokenListData || !tokenListData.logoURI) return '/assets/unknown.svg'
 
     return tokenListData.logoURI

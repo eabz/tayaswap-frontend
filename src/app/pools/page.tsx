@@ -156,7 +156,7 @@ export default function Page() {
         </GridItem>
       </SimpleGrid>
 
-      <Table columns={columns} data={poolData} />
+      <Table columns={columns} loading={true} data={poolData} />
     </Box>
   )
 }

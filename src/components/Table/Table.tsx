@@ -19,6 +19,7 @@ export type TData = Record<never, unknown>
 interface ITableProps<RowDataType extends TData> {
   columns: ColumnDef<RowDataType>[]
   data: RowDataType[]
+  loading: boolean
 }
 
 const SORTED_ICONS: Record<string, ReactNode> = {
@@ -26,7 +27,7 @@ const SORTED_ICONS: Record<string, ReactNode> = {
   desc: <ArrowDownIcon height="2" width="2" />
 }
 
-export function Table<RowDataType extends TData>({ columns, data }: ITableProps<RowDataType>) {
+export function Table<RowDataType extends TData>({ columns, data, loading }: ITableProps<RowDataType>) {
   const [tableData, setTableData] = useState(data)
 
   useEffect(() => {
