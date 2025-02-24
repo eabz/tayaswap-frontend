@@ -28,7 +28,7 @@ export function usePermitSignature({
     tokenAddress: string,
     permit: IPermitParams
   ): Promise<{ v: bigint | undefined; r: `0x${string}`; s: `0x${string}` }> => {
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 100_000)
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 100)
 
     const signature = await signTypedDataAsync({
       domain: {
@@ -38,13 +38,6 @@ export function usePermitSignature({
         verifyingContract: tokenAddress as `0x${string}`
       },
       types: {
-        // biome-ignore lint/style/useNamingConvention: variables must match uppercase content
-        EIP712Domain: [
-          { name: 'name', type: 'string' },
-          { name: 'version', type: 'string' },
-          { name: 'chainId', type: 'uint256' },
-          { name: 'verifyingContract', type: 'address' }
-        ],
         // biome-ignore lint/style/useNamingConvention: variables must match uppercase
         Permit: [
           { name: 'owner', type: 'address' },
