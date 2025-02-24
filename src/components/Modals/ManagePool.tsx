@@ -85,17 +85,14 @@ export function calculateWithdrawAmounts(
 
 export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModalProps) {
   const [view, setView] = useState(View.Selector)
-
   const [direction, setDirection] = useState(0)
 
   const { data: walletClient } = useWalletClient()
-
   const { address, chainId } = useAccount()
 
   const { getPermitSignature } = usePermitSignature({ chainId, tokenAddress: pool.id, owner: address })
 
   const { removeLiquidity, removeLiquidityETHWithPermit } = useTayaSwapRouter()
-
   const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
 
   const changeView = (newView: View) => {
@@ -111,40 +108,29 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
   )
 
   const [withdrawValue, setWithdrawValue] = useState(50)
-
-  const handleSliderChange = (value: number) => {
-    setWithdrawValue(value)
-  }
+  const handleSliderChange = (value: number) => setWithdrawValue(value)
 
   const amount0Withdraw = useMemo(() => {
     const token0Balance = parseUnits(amountToken0, Number.parseInt(pool.token0.decimals))
-    const percentage = BigInt(withdrawValue)
-
-    return (token0Balance * percentage) / BigInt(100)
+    return (token0Balance * BigInt(withdrawValue)) / 100n
   }, [amountToken0, pool.token0.decimals, withdrawValue])
 
   const amount1Withdraw = useMemo(() => {
     const token1Balance = parseUnits(amountToken1, Number.parseInt(pool.token1.decimals))
-    const percentage = BigInt(withdrawValue)
-
-    return (token1Balance * percentage) / BigInt(100)
+    return (token1Balance * BigInt(withdrawValue)) / 100n
   }, [amountToken1, pool.token1.decimals, withdrawValue])
 
   const poolBalanceWithdraw = useMemo(() => {
-    const percentage = BigInt(withdrawValue)
-
-    return (poolBalances[pool.id].balance * percentage) / BigInt(100)
+    return (poolBalances[pool.id].balance * BigInt(withdrawValue)) / 100n
   }, [poolBalances, withdrawValue, pool.id])
 
   const [loadingWithdrawal, setLoadingWithdrawal] = useState(false)
-
   const [signature, setSignature] = useState<{ v: bigint | undefined; r: `0x${string}`; s: `0x${string}` } | undefined>(
     undefined
   )
 
   const handleWithdraw = async () => {
     const slippage = 5
-
     if (!address || !walletClient || !signature || !signature.v) return
 
     setLoadingWithdrawal(true)
@@ -160,7 +146,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
           address,
           walletClient,
           pool,
-          false,
+          poolBalanceWithdraw === poolBalances[pool.id].balance,
           signature.v,
           signature.r,
           signature.s
@@ -169,7 +155,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
         await removeLiquidity(pool.token0, pool.token1, poolBalanceWithdraw, slippage, address, walletClient, pool)
       }
     } catch (e) {
-      new Error(`error: ${e}`)
+      console.error('Withdrawal error:', e)
     }
 
     setLoadingWithdrawal(false)
@@ -190,7 +176,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
 
       setSignature(signature)
     } catch (e) {
-      new Error(`error: ${e}`)
+      console.error('Signature error:', e)
     }
 
     setLoadingWithdrawal(false)
@@ -239,7 +225,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
               </HStack>
             </DialogHeader>
             <DialogBody>
-              <Box height={view === View.Selector ? '250px' : '350px'} position="relative" overflow="hidden">
+              <Box height="350px" position="relative" overflow="hidden">
                 <AnimatePresence initial={false} custom={direction}>
                   {view === View.Selector && (
                     <motion.div
@@ -252,7 +238,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
                       transition={{ duration: 0.3 }}
                       style={{ position: 'absolute', width: '100%' }}
                     >
-                      <VStack height="225px" justifyContent="center" alignItems="center" gap="30px">
+                      <VStack height="325px" justifyContent="center" alignItems="center" gap="30px">
                         <Button
                           background="modal-selector-button-background"
                           color="button-group-button-active-color"

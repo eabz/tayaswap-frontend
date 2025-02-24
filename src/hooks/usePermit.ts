@@ -32,7 +32,7 @@ export function usePermitSignature({
 
     const signature = await signTypedDataAsync({
       domain: {
-        name: 'Swap LP Token',
+        name: 'Swap LPs',
         version: '1',
         chainId: BigInt(chainId),
         verifyingContract: tokenAddress as `0x${string}`

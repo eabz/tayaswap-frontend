@@ -25,7 +25,6 @@
     "rules": {
       "suspicious": {
         "noArrayIndexKey": "off",
-        "noConsole": "error",
         "noConsoleLog": "error",
         "noEmptyBlockStatements": "error",
         "useAwait": "error",
