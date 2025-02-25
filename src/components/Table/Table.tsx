@@ -53,7 +53,7 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
 
   return (
     <Stack my="5">
-      <Flex direction="column" align="center" minWidth={table.getCenterTotalSize()} width="100%">
+      <Flex direction="column" align="center" minWidth={table.getCenterTotalSize()} width="100%" zIndex="40" px="2">
         <ChakraTable.ScrollArea
           roundedTop="25px"
           width="full"
