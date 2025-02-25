@@ -7,12 +7,14 @@ export interface ITokenAmountInputProps extends InputProps {
   tokenAddress: string
   tokenSymbol: string
   loading: boolean
+  hasEnough: boolean
 }
 
 export function TokenAmountInput({
   tokenSymbol,
   tokenAddress,
   loading,
+  hasEnough,
   onChangeHandler,
   ...props
 }: ITokenAmountInputProps): JSX.Element {
@@ -43,7 +45,7 @@ export function TokenAmountInput({
             background="input-liquidity-background"
             outline="none"
             border="none"
-            color="text-contrast"
+            color={hasEnough ? 'text-contrast' : 'red.600'}
             placeholder="0.00"
             onChange={(e) => onChangeHandler(e.target.value)}
             rounded="lg"

@@ -200,7 +200,13 @@ export default function Page() {
   const handlePoolManageClose = async () => {
     if (!address || !managePool) return
 
-    await reloadPoolBalances(address, [{ address: managePool.id, decimals: 18 }])
+    await Promise.all([
+      reloadPoolBalances(address, [{ address: managePool.id, decimals: 18 }]),
+      reloadTokenBalances(address, [
+        { address: managePool.token0.id, decimals: Number.parseInt(managePool.token0.decimals) },
+        { address: managePool.token1.id, decimals: Number.parseInt(managePool.token1.decimals) }
+      ])
+    ])
 
     setManagePoolId(undefined)
   }

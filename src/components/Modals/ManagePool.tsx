@@ -1,7 +1,7 @@
 'use client'
 
 import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
-import type { IPairData } from '@/services'
+import type { IPairData, IPairTokenData } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
 import { ROUTER_ADDRESS, WETH_ADDRESS, formatTokenBalance } from '@/utils'
 import {
@@ -22,13 +22,16 @@ import {
 } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
-import { parseUnits } from 'viem'
+import { parseUnits, zeroAddress } from 'viem'
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { ActionButton, SubmitButton } from '../Buttons'
 import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../Icons'
 import { TokenAmountInput } from '../Input'
 import { Slider } from '../Slider'
 import { TokenIconGroup } from '../TokenIcon'
+
+// TODO: put it into a global state
+const SLIPPAGE = 5
 
 enum View {
   Selector = 0,
@@ -80,6 +83,7 @@ interface IViewProps {
   direction: number
   changeView: (view: View) => void
   pool: IPairData
+  close: () => void
 }
 
 function SelectActionView({ direction, changeView }: IViewProps) {
@@ -132,25 +136,32 @@ function SelectActionView({ direction, changeView }: IViewProps) {
   )
 }
 
-function AddLiquidityView({ direction, pool }: IViewProps) {
+function AddLiquidityView({ direction, pool, close }: IViewProps) {
   const [token0Value, setToken0Value] = useState('0')
   const [token1Value, setToken1Value] = useState('0')
-
   const [loadingToken0, setLoadingToken0] = useState(false)
   const [loadingToken1, setLoadingToken1] = useState(false)
-
-  const { tokenBalances, getFormattedTokenBalance } = useTokenBalancesStore()
-
-  const { approved, approve } = useERC20Token()
-
-  const { address } = useAccount()
-
-  const { data: walletClient } = useWalletClient()
-
-  const publicClient = usePublicClient()
-
+  const [loadingApproveToken0, setLoadingApproveToken0] = useState(false)
+  const [loadingApproveToken1, setLoadingApproveToken1] = useState(false)
+  const [loadingAddLiquidity, setLoadingAddLiquidity] = useState(false)
   const [token0Approved, setToken0Approved] = useState(true)
   const [token1Approved, setToken1Approved] = useState(true)
+
+  const { tokenBalances, getFormattedTokenBalance } = useTokenBalancesStore()
+  const { approved, approve } = useERC20Token()
+  const { address } = useAccount()
+  const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
+
+  const { calculateLiquidityCounterAmount, addLiquidity, addLiquidityETH } = useTayaSwapRouter()
+
+  const getBalance = (tokenAddress: string): bigint =>
+    tokenAddress === WETH_ADDRESS
+      ? tokenBalances[zeroAddress]?.balance || 0n
+      : tokenBalances[tokenAddress]?.balance || 0n
+
+  const getFormattedBalance = (tokenAddress: string): string =>
+    tokenAddress === WETH_ADDRESS ? getFormattedTokenBalance(zeroAddress) : getFormattedTokenBalance(tokenAddress)
 
   useEffect(() => {
     if (!address || !token0Value || token0Value === '0' || !publicClient || pool.token0.id === WETH_ADDRESS) {
@@ -174,42 +185,29 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
       .catch((err) => console.error(err))
   }, [address, token1Value, pool.token1.id, pool.token1.decimals, publicClient, approved])
 
-  const { calculateLiquidityCounterAmount, addLiquidity, addLiquidityETH } = useTayaSwapRouter()
-
   const handleToken0ValueChange = (value: string) => {
-    const slippage = 1
-
     setLoadingToken1(true)
     setToken0Value(value)
 
     try {
       const inputAmount = parseUnits(value, Number.parseInt(pool.token0.decimals))
-
-      const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token0.id, pool, slippage)
-
+      const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token0.id, pool, SLIPPAGE)
       const formattedOutput = formatTokenBalance(outputAmount, Number.parseInt(pool.token1.decimals))
-
       setToken1Value(formattedOutput)
     } catch (error) {
       console.error('Error calculating trade output for token0:', error)
     }
-
     setLoadingToken1(false)
   }
 
   const handleToken1ValueChange = (value: string) => {
-    const slippage = 1
-
     setLoadingToken0(true)
     setToken1Value(value)
 
     try {
       const inputAmount = parseUnits(value, Number.parseInt(pool.token1.decimals))
-
-      const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token1.id, pool, slippage)
-
+      const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token1.id, pool, SLIPPAGE)
       const formattedOutput = formatTokenBalance(outputAmount, Number.parseInt(pool.token0.decimals))
-
       setToken0Value(formattedOutput)
     } catch (error) {
       console.error('Error calculating trade output for token1:', error)
@@ -217,18 +215,13 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
     setLoadingToken0(false)
   }
 
-  const [loadingApproveToken0, setLoadingApproveToken0] = useState(false)
-
   const handleApproveToken0 = async () => {
     if (!walletClient || !publicClient) return
-
     setLoadingApproveToken0(true)
     try {
       const amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
-
       await approve(pool.token0.id, amount, walletClient)
       if (address) {
-        const amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
         const isApproved = await approved(address, pool.token0.id, amount, publicClient)
         setToken0Approved(isApproved)
       }
@@ -238,31 +231,24 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
     setLoadingApproveToken0(false)
   }
 
-  const [loadingApproveToken1, setLoadingApproveToken1] = useState(false)
-
   const handleApproveToken1 = async () => {
     if (!walletClient || !publicClient) return
-
     setLoadingApproveToken1(true)
-
     try {
       const amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
-
       await approve(pool.token1.id, amount, walletClient)
       if (address) {
-        const amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
         const isApproved = await approved(address, pool.token1.id, amount, publicClient)
         setToken1Approved(isApproved)
       }
     } catch (err) {
       console.error('Error approving token1:', err)
     }
-
     setLoadingApproveToken1(false)
   }
 
-  const token0Balance: bigint = tokenBalances[pool.token0.id]?.balance || 0n
-  const token1Balance: bigint = tokenBalances[pool.token1.id]?.balance || 0n
+  const token0Balance: bigint = getBalance(pool.token0.id)
+  const token1Balance: bigint = getBalance(pool.token1.id)
 
   let token0ValueBigInt = 0n
   let token1ValueBigInt = 0n
@@ -288,12 +274,48 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
     hasSufficientToken0 &&
     hasSufficientToken1
 
-  const [loadingAddLiquidity, setLoadingAddLiquidity] = useState(false)
+  const handleAddLiquidity = async () => {
+    if (!walletClient || !address) return
 
-  const handleAddLiquidity = () => {
-    if (!walletClient) return
     setLoadingAddLiquidity(true)
+
+    try {
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 100_000)
+
+      const token0Amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
+      const token1Amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
+
+      if (pool.token0.id === WETH_ADDRESS || pool.token1.id === WETH_ADDRESS) {
+        let token: IPairTokenData
+        let tokenAmount: bigint
+        let ethAmount: bigint
+        if (pool.token0.id === WETH_ADDRESS) {
+          token = pool.token1
+          tokenAmount = token1Amount
+          ethAmount = token0Amount
+        } else {
+          token = pool.token0
+          tokenAmount = token0Amount
+          ethAmount = token1Amount
+        }
+        await addLiquidityETH(token, tokenAmount, ethAmount, SLIPPAGE, address, walletClient, deadline)
+      } else {
+        await addLiquidity(
+          pool.token0,
+          pool.token1,
+          token0Amount,
+          token1Amount,
+          SLIPPAGE,
+          address,
+          walletClient,
+          deadline
+        )
+      }
+    } catch (error) {
+      console.error('Error adding liquidity:', error)
+    }
     setLoadingAddLiquidity(false)
+    close()
   }
 
   return (
@@ -310,7 +332,7 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
       <VStack width="full" gap="15px" mt="20px">
         <HStack width="full" position="relative">
           <Box
-            onClick={() => handleToken0ValueChange(getFormattedTokenBalance(pool.token0.id))}
+            onClick={() => handleToken0ValueChange(getFormattedBalance(pool.token0.id))}
             position="absolute"
             cursor="pointer"
             top="-25px"
@@ -318,16 +340,16 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
             zIndex="30"
           >
             <Text fontSize="xs" color="text-contrast">
-              Available: {getFormattedTokenBalance(pool.token0.id)}
+              Available: {getFormattedBalance(pool.token0.id)}
             </Text>
           </Box>
-
           <TokenAmountInput
+            hasEnough={hasSufficientToken0}
             loading={loadingToken0}
             value={token0Value}
             tokenSymbol={pool.token0.symbol}
             tokenAddress={pool.token0.id}
-            onChangeHandler={(value) => handleToken0ValueChange(value)}
+            onChangeHandler={handleToken0ValueChange}
           />
         </HStack>
         <HStack width="full" justifyContent="center">
@@ -341,10 +363,9 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
             <PlusIcon />
           </IconButton>
         </HStack>
-
         <HStack width="full" position="relative">
           <Box
-            onClick={() => handleToken1ValueChange(getFormattedTokenBalance(pool.token1.id))}
+            onClick={() => handleToken1ValueChange(getFormattedBalance(pool.token1.id))}
             position="absolute"
             cursor="pointer"
             top="-25px"
@@ -352,34 +373,35 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
             zIndex="30"
           >
             <Text fontSize="xs" color="text-contrast">
-              Available: {getFormattedTokenBalance(pool.token1.id)}
+              Available: {getFormattedBalance(pool.token1.id)}
             </Text>
           </Box>
           <TokenAmountInput
+            hasEnough={hasSufficientToken1}
             loading={loadingToken1}
             value={token1Value}
             tokenSymbol={pool.token1.symbol}
             tokenAddress={pool.token1.id}
-            onChangeHandler={(value) => handleToken1ValueChange(value)}
+            onChangeHandler={handleToken1ValueChange}
           />
         </HStack>
 
         {(!hasSufficientToken0 || !hasSufficientToken1) && (
           <VStack>
             {!hasSufficientToken0 && (
-              <Text color="red.500" fontSize="sm">
+              <Text color="red.600" fontSize="sm">
                 Not enough {pool.token0.symbol} balance.
               </Text>
             )}
             {!hasSufficientToken1 && (
-              <Text color="red.500" fontSize="sm">
+              <Text color="red.600" fontSize="sm">
                 Not enough {pool.token1.symbol} balance.
               </Text>
             )}
           </VStack>
         )}
 
-        {token1Approved && token0Approved && (
+        {token0Approved && token1Approved && (
           <Box width="full" mt="20px">
             <SubmitButton
               width="full"
@@ -417,7 +439,7 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
   )
 }
 
-function RemoveLiquidityView({ direction, pool }: IViewProps) {
+function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
   const { address, chainId } = useAccount()
 
   const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
@@ -459,7 +481,6 @@ function RemoveLiquidityView({ direction, pool }: IViewProps) {
   const { removeLiquidityWithPermit, removeLiquidityETHWithPermit } = useTayaSwapRouter()
 
   const handleWithdraw = async () => {
-    const slippage = 5
     if (!address || !walletClient || !signature || !signature.v) return
 
     setLoadingWithdrawal(true)
@@ -471,7 +492,7 @@ function RemoveLiquidityView({ direction, pool }: IViewProps) {
         await removeLiquidityETHWithPermit(
           token,
           poolBalanceWithdraw,
-          slippage,
+          SLIPPAGE,
           address,
           walletClient,
           pool,
@@ -485,7 +506,7 @@ function RemoveLiquidityView({ direction, pool }: IViewProps) {
           pool.token0,
           pool.token1,
           poolBalanceWithdraw,
-          slippage,
+          SLIPPAGE,
           address,
           walletClient,
           pool,
@@ -692,15 +713,15 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
               <Box height="350px" position="relative" overflow="hidden">
                 <AnimatePresence initial={false} custom={direction}>
                   {view === View.Selector && (
-                    <SelectActionView direction={direction} changeView={changeView} pool={pool} />
+                    <SelectActionView direction={direction} changeView={changeView} pool={pool} close={close} />
                   )}
 
                   {view === View.AddLiquidity && (
-                    <AddLiquidityView direction={direction} changeView={changeView} pool={pool} />
+                    <AddLiquidityView direction={direction} changeView={changeView} pool={pool} close={close} />
                   )}
 
                   {view === View.RemoveLiquidity && (
-                    <RemoveLiquidityView direction={direction} changeView={changeView} pool={pool} />
+                    <RemoveLiquidityView direction={direction} changeView={changeView} pool={pool} close={close} />
                   )}
                 </AnimatePresence>
               </Box>
