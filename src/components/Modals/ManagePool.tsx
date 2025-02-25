@@ -1,7 +1,6 @@
 'use client'
 
-import { useTayaSwapRouter } from '@/hooks'
-import { usePermitSignature } from '@/hooks/usePermit'
+import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
 import type { IPairData } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
 import { ROUTER_ADDRESS, WETH_ADDRESS, formatTokenBalance } from '@/utils'
@@ -22,9 +21,9 @@ import {
   VStack
 } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { parseUnits } from 'viem'
-import { useAccount, useWalletClient } from 'wagmi'
+import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { ActionButton, SubmitButton } from '../Buttons'
 import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../Icons'
 import { TokenAmountInput } from '../Input'
@@ -140,9 +139,42 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
   const [loadingToken0, setLoadingToken0] = useState(false)
   const [loadingToken1, setLoadingToken1] = useState(false)
 
-  const { calculateTradeOutput } = useTayaSwapRouter()
+  const { tokenBalances, getFormattedTokenBalance } = useTokenBalancesStore()
 
-  const { getFormattedTokenBalance } = useTokenBalancesStore()
+  const { approved, approve } = useERC20Token()
+
+  const { address } = useAccount()
+
+  const { data: walletClient } = useWalletClient()
+
+  const publicClient = usePublicClient()
+
+  const [token0Approved, setToken0Approved] = useState(true)
+  const [token1Approved, setToken1Approved] = useState(true)
+
+  useEffect(() => {
+    if (!address || !token0Value || token0Value === '0' || !publicClient || pool.token0.id === WETH_ADDRESS) {
+      setToken0Approved(true)
+      return
+    }
+    const amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
+    approved(address, pool.token0.id, amount, publicClient)
+      .then(setToken0Approved)
+      .catch((err) => console.error(err))
+  }, [address, token0Value, pool.token0.id, pool.token0.decimals, publicClient, approved])
+
+  useEffect(() => {
+    if (!address || !token1Value || token1Value === '0' || !publicClient || pool.token1.id === WETH_ADDRESS) {
+      setToken1Approved(true)
+      return
+    }
+    const amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
+    approved(address, pool.token1.id, amount, publicClient)
+      .then(setToken1Approved)
+      .catch((err) => console.error(err))
+  }, [address, token1Value, pool.token1.id, pool.token1.decimals, publicClient, approved])
+
+  const { calculateLiquidityCounterAmount, addLiquidity, addLiquidityETH } = useTayaSwapRouter()
 
   const handleToken0ValueChange = (value: string) => {
     const slippage = 1
@@ -153,7 +185,7 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
     try {
       const inputAmount = parseUnits(value, Number.parseInt(pool.token0.decimals))
 
-      const outputAmount = calculateTradeOutput(inputAmount, pool.token0.id, pool, slippage)
+      const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token0.id, pool, slippage)
 
       const formattedOutput = formatTokenBalance(outputAmount, Number.parseInt(pool.token1.decimals))
 
@@ -174,7 +206,7 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
     try {
       const inputAmount = parseUnits(value, Number.parseInt(pool.token1.decimals))
 
-      const outputAmount = calculateTradeOutput(inputAmount, pool.token1.id, pool, slippage)
+      const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token1.id, pool, slippage)
 
       const formattedOutput = formatTokenBalance(outputAmount, Number.parseInt(pool.token0.decimals))
 
@@ -183,6 +215,85 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
       console.error('Error calculating trade output for token1:', error)
     }
     setLoadingToken0(false)
+  }
+
+  const [loadingApproveToken0, setLoadingApproveToken0] = useState(false)
+
+  const handleApproveToken0 = async () => {
+    if (!walletClient || !publicClient) return
+
+    setLoadingApproveToken0(true)
+    try {
+      const amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
+
+      await approve(pool.token0.id, amount, walletClient)
+      if (address) {
+        const amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
+        const isApproved = await approved(address, pool.token0.id, amount, publicClient)
+        setToken0Approved(isApproved)
+      }
+    } catch (err) {
+      console.error('Error approving token0:', err)
+    }
+    setLoadingApproveToken0(false)
+  }
+
+  const [loadingApproveToken1, setLoadingApproveToken1] = useState(false)
+
+  const handleApproveToken1 = async () => {
+    if (!walletClient || !publicClient) return
+
+    setLoadingApproveToken1(true)
+
+    try {
+      const amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
+
+      await approve(pool.token1.id, amount, walletClient)
+      if (address) {
+        const amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
+        const isApproved = await approved(address, pool.token1.id, amount, publicClient)
+        setToken1Approved(isApproved)
+      }
+    } catch (err) {
+      console.error('Error approving token1:', err)
+    }
+
+    setLoadingApproveToken1(false)
+  }
+
+  const token0Balance: bigint = tokenBalances[pool.token0.id]?.balance || 0n
+  const token1Balance: bigint = tokenBalances[pool.token1.id]?.balance || 0n
+
+  let token0ValueBigInt = 0n
+  let token1ValueBigInt = 0n
+  try {
+    token0ValueBigInt = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
+  } catch (error) {
+    console.error('Error parsing token0 value', error)
+  }
+  try {
+    token1ValueBigInt = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
+  } catch (error) {
+    console.error('Error parsing token1 value', error)
+  }
+
+  const hasSufficientToken0 = token0ValueBigInt <= token0Balance
+  const hasSufficientToken1 = token1ValueBigInt <= token1Balance
+
+  const canAddLiquidity =
+    token0Value !== '0' &&
+    token1Value !== '0' &&
+    token0Approved &&
+    token1Approved &&
+    hasSufficientToken0 &&
+    hasSufficientToken1
+
+  const [loadingAddLiquidity, setLoadingAddLiquidity] = useState(false)
+
+  const handleAddLiquidity = () => {
+    if (!walletClient) return
+    setLoadingAddLiquidity(true)
+    setLoadingAddLiquidity(false)
   }
 
   return (
@@ -196,7 +307,7 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
       transition={{ duration: 0.3 }}
       style={{ position: 'absolute', width: '100%' }}
     >
-      <VStack width="full" gap="25px" mt="20px">
+      <VStack width="full" gap="15px" mt="20px">
         <HStack width="full" position="relative">
           <Box
             onClick={() => handleToken0ValueChange(getFormattedTokenBalance(pool.token0.id))}
@@ -252,6 +363,55 @@ function AddLiquidityView({ direction, pool }: IViewProps) {
             onChangeHandler={(value) => handleToken1ValueChange(value)}
           />
         </HStack>
+
+        {(!hasSufficientToken0 || !hasSufficientToken1) && (
+          <VStack>
+            {!hasSufficientToken0 && (
+              <Text color="red.500" fontSize="sm">
+                Not enough {pool.token0.symbol} balance.
+              </Text>
+            )}
+            {!hasSufficientToken1 && (
+              <Text color="red.500" fontSize="sm">
+                Not enough {pool.token1.symbol} balance.
+              </Text>
+            )}
+          </VStack>
+        )}
+
+        {token1Approved && token0Approved && (
+          <Box width="full" mt="20px">
+            <SubmitButton
+              width="full"
+              loading={loadingAddLiquidity}
+              text="Add Liquidity"
+              onClickHandler={handleAddLiquidity}
+              disabled={!canAddLiquidity}
+            />
+          </Box>
+        )}
+
+        <VStack width="full" gap="3px">
+          {!token0Approved && hasSufficientToken0 && (
+            <SubmitButton
+              width="full"
+              disabled={false}
+              loading={loadingApproveToken0}
+              text={`Approve ${pool.token0.symbol}`}
+              onClickHandler={handleApproveToken0}
+            />
+          )}
+
+          {!token1Approved && hasSufficientToken1 && (
+            <SubmitButton
+              width="full"
+              disabled={false}
+              loading={loadingApproveToken1}
+              text={`Approve ${pool.token1.symbol}`}
+              onClickHandler={handleApproveToken1}
+            />
+          )}
+        </VStack>
       </VStack>
     </motion.div>
   )

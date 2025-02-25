@@ -37,11 +37,28 @@ interface ITayaSwapRouter {
     deadline: bigint
   ) => Promise<void>
   calculateTradeOutput: (inputAmount: bigint, inputToken: string, pool: IPairData, slippage: number) => bigint
+  addLiquidity: (
+    token0: IPairTokenData,
+    token1: IPairTokenData,
+    amountADesired: bigint,
+    amountBDesired: bigint,
+    slippage: number,
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint
+  ) => Promise<void>
+  addLiquidityETH: (
+    token: IPairTokenData,
+    amountTokenDesired: bigint,
+    amountETHDesired: bigint,
+    slippage: number,
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint
+  ) => Promise<void>
 }
 
-// TODO: find a way to fix this lint exception
-// biome-ignore lint/style/useNamingConvention: hooks must be constants
-export const useTayaSwapRouter = (): ITayaSwapRouter => {
+export function useTayaSwapRouter(): ITayaSwapRouter {
   const calculateLiquidityCounterAmount = (
     inputAmount: bigint,
     inputToken: string,
@@ -50,8 +67,8 @@ export const useTayaSwapRouter = (): ITayaSwapRouter => {
   ): bigint => {
     if (inputAmount === 0n) return 0n
 
-    const reserve0 = parseUnits(pool.reserve0, 18)
-    const reserve1 = parseUnits(pool.reserve1, 18)
+    const reserve0 = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
+    const reserve1 = parseUnits(pool.reserve1, Number.parseInt(pool.token1.decimals))
 
     let requiredCounter: bigint
 
@@ -176,10 +193,63 @@ export const useTayaSwapRouter = (): ITayaSwapRouter => {
     return minAmountOut
   }
 
+  const addLiquidity = async (
+    token0: IPairTokenData,
+    token1: IPairTokenData,
+    amountADesired: bigint,
+    amountBDesired: bigint,
+    slippage: number,
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint
+  ): Promise<void> => {
+    // Calculate minimum amounts based on slippage
+    const minAmountA = (amountADesired * BigInt(100 - slippage)) / 100n
+    const minAmountB = (amountBDesired * BigInt(100 - slippage)) / 100n
+
+    const tx = await client.writeContract({
+      address: ROUTER_ADDRESS,
+      abi: ROUTER_ABI,
+      functionName: 'addLiquidity',
+      args: [token0.id, token1.id, amountADesired, amountBDesired, minAmountA, minAmountB, toAddress, deadline],
+      chain: client.chain,
+      account: client.account as Account
+    })
+
+    await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
+  }
+
+  const addLiquidityETH = async (
+    token: IPairTokenData,
+    amountTokenDesired: bigint,
+    amountETHDesired: bigint,
+    slippage: number,
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint
+  ): Promise<void> => {
+    const minTokenAmount = (amountTokenDesired * BigInt(100 - slippage)) / 100n
+    const minETHAmount = (amountETHDesired * BigInt(100 - slippage)) / 100n
+
+    const tx = await client.writeContract({
+      address: ROUTER_ADDRESS,
+      abi: ROUTER_ABI,
+      functionName: 'addLiquidityETH',
+      args: [token.id, amountTokenDesired, minTokenAmount, minETHAmount, toAddress, deadline],
+      chain: client.chain,
+      account: client.account as Account,
+      value: amountETHDesired
+    })
+
+    await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
+  }
+
   return {
     calculateLiquidityCounterAmount,
     removeLiquidityWithPermit,
     removeLiquidityETHWithPermit,
-    calculateTradeOutput
+    calculateTradeOutput,
+    addLiquidity,
+    addLiquidityETH
   }
 }
