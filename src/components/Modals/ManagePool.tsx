@@ -26,7 +26,8 @@ import { useMemo, useState } from 'react'
 import { parseUnits } from 'viem'
 import { useAccount, useWalletClient } from 'wagmi'
 import { ActionButton, SubmitButton } from '../Buttons'
-import { ChevronLeftIcon, CloseIcon } from '../Icons'
+import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../Icons'
+import { TokenAmountInput } from '../Input'
 import { Slider } from '../Slider'
 import { TokenIconGroup } from '../TokenIcon'
 
@@ -132,7 +133,58 @@ function SelectActionView({ direction, changeView }: IViewProps) {
   )
 }
 
-function AddLiquidityView({ direction }: IViewProps) {
+function AddLiquidityView({ direction, pool }: IViewProps) {
+  const [token0Value, setToken0Value] = useState('0')
+  const [token1Value, setToken1Value] = useState('0')
+
+  const [loadingToken0, setLoadingToken0] = useState(false)
+  const [loadingToken1, setLoadingToken1] = useState(false)
+
+  const { calculateTradeOutput } = useTayaSwapRouter()
+
+  const { getFormattedTokenBalance } = useTokenBalancesStore()
+
+  const handleToken0ValueChange = (value: string) => {
+    const slippage = 1
+
+    setLoadingToken1(true)
+    setToken0Value(value)
+
+    try {
+      const inputAmount = parseUnits(value, Number.parseInt(pool.token0.decimals))
+
+      const outputAmount = calculateTradeOutput(inputAmount, pool.token0.id, pool, slippage)
+
+      const formattedOutput = formatTokenBalance(outputAmount, Number.parseInt(pool.token1.decimals))
+
+      setToken1Value(formattedOutput)
+    } catch (error) {
+      console.error('Error calculating trade output for token0:', error)
+    }
+
+    setLoadingToken1(false)
+  }
+
+  const handleToken1ValueChange = (value: string) => {
+    const slippage = 1
+
+    setLoadingToken0(true)
+    setToken1Value(value)
+
+    try {
+      const inputAmount = parseUnits(value, Number.parseInt(pool.token1.decimals))
+
+      const outputAmount = calculateTradeOutput(inputAmount, pool.token1.id, pool, slippage)
+
+      const formattedOutput = formatTokenBalance(outputAmount, Number.parseInt(pool.token0.decimals))
+
+      setToken0Value(formattedOutput)
+    } catch (error) {
+      console.error('Error calculating trade output for token1:', error)
+    }
+    setLoadingToken0(false)
+  }
+
   return (
     <motion.div
       key="addLiquidity"
@@ -144,7 +196,63 @@ function AddLiquidityView({ direction }: IViewProps) {
       transition={{ duration: 0.3 }}
       style={{ position: 'absolute', width: '100%' }}
     >
-      <Text textAlign="center">Add Liquidity Content</Text>
+      <VStack width="full" gap="25px" mt="20px">
+        <HStack width="full" position="relative">
+          <Box
+            onClick={() => handleToken0ValueChange(getFormattedTokenBalance(pool.token0.id))}
+            position="absolute"
+            cursor="pointer"
+            top="-25px"
+            right="0"
+            zIndex="30"
+          >
+            <Text fontSize="xs" color="text-contrast">
+              Available: {getFormattedTokenBalance(pool.token0.id)}
+            </Text>
+          </Box>
+
+          <TokenAmountInput
+            loading={loadingToken0}
+            value={token0Value}
+            tokenSymbol={pool.token0.symbol}
+            tokenAddress={pool.token0.id}
+            onChangeHandler={(value) => handleToken0ValueChange(value)}
+          />
+        </HStack>
+        <HStack width="full" justifyContent="center">
+          <IconButton
+            variant="ghost"
+            size="lg"
+            cursor="default"
+            rounded="full"
+            background="modal-selector-button-background"
+          >
+            <PlusIcon />
+          </IconButton>
+        </HStack>
+
+        <HStack width="full" position="relative">
+          <Box
+            onClick={() => handleToken1ValueChange(getFormattedTokenBalance(pool.token1.id))}
+            position="absolute"
+            cursor="pointer"
+            top="-25px"
+            right="0"
+            zIndex="30"
+          >
+            <Text fontSize="xs" color="text-contrast">
+              Available: {getFormattedTokenBalance(pool.token1.id)}
+            </Text>
+          </Box>
+          <TokenAmountInput
+            loading={loadingToken1}
+            value={token1Value}
+            tokenSymbol={pool.token1.symbol}
+            tokenAddress={pool.token1.id}
+            onChangeHandler={(value) => handleToken1ValueChange(value)}
+          />
+        </HStack>
+      </VStack>
     </motion.div>
   )
 }
@@ -305,7 +413,7 @@ function RemoveLiquidityView({ direction, pool }: IViewProps) {
           </Text>
         </HStack>
         <HStack justifyContent="start" width="full" px="5">
-          <Text fontSize="20px" fontWeight="600" color="modal-title-color">
+          <Text fontSize="20px" fontWeight="600" color="text-contrast">
             {withdrawValue}%
           </Text>
         </HStack>
@@ -401,7 +509,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
                     </IconButton>
                   )}
                   <DialogTitle>
-                    <Text color="modal-title-color" fontWeight="400">
+                    <Text color="text-contrast" fontWeight="400">
                       {view === View.Selector && 'Manage Pool'}
                       {view === View.AddLiquidity && 'Add Liquidity'}
                       {view === View.RemoveLiquidity && 'Remove Liquidity'}

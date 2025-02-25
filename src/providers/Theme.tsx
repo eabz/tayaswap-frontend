@@ -1,6 +1,8 @@
 'use client'
 
 import '@rainbow-me/rainbowkit/styles.css'
+import '@/theme/global.css'
+
 import { SYSTEM } from '@/theme'
 import { ChakraProvider } from '@chakra-ui/react'
 import { ThemeProvider as NextThemeProvider } from 'next-themes'

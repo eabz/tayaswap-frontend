@@ -61,7 +61,7 @@ export function CreatePoolsModal({ open, close, onClose }: ICreatePoolModalProps
               <HStack justifyContent="space-between">
                 <HStack justifyContent="start" alignItems="center" gap="15px">
                   <DialogTitle>
-                    <Text color="modal-title-color" fontWeight="400">
+                    <Text color="text-contrast" fontWeight="400">
                       {view === View.Pairs && 'Create Pool'}
                       {view === View.Liquidity && 'Add Initial Liquidity'}
                     </Text>

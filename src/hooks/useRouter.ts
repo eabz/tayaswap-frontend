@@ -36,6 +36,7 @@ interface ITayaSwapRouter {
     s: string,
     deadline: bigint
   ) => Promise<void>
+  calculateTradeOutput: (inputAmount: bigint, inputToken: string, pool: IPairData, slippage: number) => bigint
 }
 
 // TODO: find a way to fix this lint exception
@@ -146,9 +147,39 @@ export const useTayaSwapRouter = (): ITayaSwapRouter => {
     await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
   }
 
+  const calculateTradeOutput = (inputAmount: bigint, inputToken: string, pool: IPairData, slippage: number): bigint => {
+    if (inputAmount === 0n) return 0n
+
+    let reserveIn: bigint
+    let reserveOut: bigint
+
+    if (inputToken === pool.token0.id) {
+      reserveIn = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
+      reserveOut = parseUnits(pool.reserve1, Number.parseInt(pool.token1.decimals))
+    } else if (inputToken === pool.token1.id) {
+      reserveIn = parseUnits(pool.reserve1, Number.parseInt(pool.token1.decimals))
+      reserveOut = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
+    } else {
+      throw new Error('Input token is not part of this pool')
+    }
+
+    const feeMultiplier = 997n
+    const feeDenom = 1000n
+
+    const inputWithFee = inputAmount * feeMultiplier
+    const numerator = inputWithFee * reserveOut
+    const denominator = reserveIn * feeDenom + inputWithFee
+    const amountOut = numerator / denominator
+
+    const minAmountOut = (amountOut * BigInt(100 - slippage)) / 100n
+
+    return minAmountOut
+  }
+
   return {
     calculateLiquidityCounterAmount,
     removeLiquidityWithPermit,
-    removeLiquidityETHWithPermit
+    removeLiquidityETHWithPermit,
+    calculateTradeOutput
   }
 }

@@ -1,5 +1,5 @@
 'use client'
-import { Box, HStack } from '@chakra-ui/react'
+import { HStack } from '@chakra-ui/react'
 import { TokenIcon } from './TokenIcon'
 
 interface ITokenIconGroup {
@@ -11,12 +11,8 @@ interface ITokenIconGroup {
 export function TokenIconGroup({ size = '40px', token0, token1 }: ITokenIconGroup) {
   return (
     <HStack alignItems="center" position="relative" justifyContent="center">
-      <Box mr="-4" width={size} height={size} position="relative" borderRadius="full" overflow="hidden">
-        <TokenIcon token={token0} />
-      </Box>
-      <Box width={size} height={size} position="relative" borderRadius="full" overflow="hidden">
-        <TokenIcon token={token1} />
-      </Box>
+      <TokenIcon mr="-4" token={token0} size={size} />
+      <TokenIcon token={token1} size={size} />
     </HStack>
   )
 }

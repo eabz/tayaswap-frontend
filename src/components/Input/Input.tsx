@@ -1,4 +1,4 @@
-import { Input as ChakraInput, Group, InputElement, type InputProps } from '@chakra-ui/react'
+import { Input as ChakraInput, HStack, InputElement, type InputProps } from '@chakra-ui/react'
 import type { HTMLInputTypeAttribute, JSX, ReactNode } from 'react'
 
 export interface IInputProps extends InputProps {
@@ -6,11 +6,12 @@ export interface IInputProps extends InputProps {
   onChangeHandler: (value: string) => void
   icon?: ReactNode
   type: HTMLInputTypeAttribute
+  rightElement?: ReactNode
 }
 
-export function Input({ placeholder, type, onChangeHandler, icon, ...props }: IInputProps): JSX.Element {
+export function Input({ placeholder, type, onChangeHandler, rightElement, icon, ...props }: IInputProps): JSX.Element {
   return (
-    <Group flex="1" gap="1">
+    <HStack gap="1px" width="full">
       {icon && <InputElement pointerEvents="none">{icon}</InputElement>}
       <ChakraInput
         pl={icon ? '40px' : '0px'}
@@ -26,6 +27,6 @@ export function Input({ placeholder, type, onChangeHandler, icon, ...props }: II
         rounded="full"
         {...props}
       />
-    </Group>
+    </HStack>
   )
 }

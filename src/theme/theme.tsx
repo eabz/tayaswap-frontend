@@ -68,10 +68,13 @@ const SEMANTIC_TOKENS = {
     'modal-border': {
       value: { _light: 'white', _dark: '#1D2946' }
     },
-    'modal-title-color': {
+    'text-contrast': {
       value: { _light: 'black', _dark: 'white' }
     },
     'modal-selector-button-background': {
+      value: { _light: '#FAFAFA', _dark: '#131624' }
+    },
+    'input-liquidity-background': {
       value: { _light: '#FAFAFA', _dark: '#131624' }
     }
   }

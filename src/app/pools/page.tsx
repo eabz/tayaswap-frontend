@@ -1,6 +1,6 @@
 'use client'
 
-import { ActionButton, Input, ManagePoolModal, PlusIcon, SearchIcon, Table, TokenIconGroup } from '@/components'
+import { ActionButton, Input, ManagePoolModal, PlusOutlineIcon, SearchIcon, Table, TokenIconGroup } from '@/components'
 import { CreatePoolsModal } from '@/components/Modals/CreatePool'
 import { type IPairData, usePools } from '@/services'
 import { useTokenBalancesStore, useTokenListStore } from '@/stores'
@@ -246,7 +246,7 @@ export default function Page() {
                 text="Create Pool"
                 onClickHandler={handlePoolCreate}
                 rounded="full"
-                icon={<PlusIcon h="5" />}
+                icon={<PlusOutlineIcon h="5" />}
               />
             </HStack>
           </GridItem>

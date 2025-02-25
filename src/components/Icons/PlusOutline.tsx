@@ -1,6 +1,6 @@
 import { type HTMLChakraProps, chakra } from '@chakra-ui/react'
 
-export function PlusIcon(props: HTMLChakraProps<'svg'>) {
+export function PlusOutlineIcon(props: HTMLChakraProps<'svg'>) {
   return (
     <chakra.svg
       fill="none"
@@ -12,9 +12,10 @@ export function PlusIcon(props: HTMLChakraProps<'svg'>) {
       strokeLinejoin="round"
       {...props}
     >
-      <title>PlusIcon</title>
-      <path d="M5 12h14" />
-      <path d="M12 5v14" />
+      <title>PlusOutlineIcon</title>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M8 12h8" />
+      <path d="M12 8v8" />
     </chakra.svg>
   )
 }
