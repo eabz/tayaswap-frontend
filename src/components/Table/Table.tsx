@@ -88,25 +88,37 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
               ))}
             </ChakraTable.Header>
             <ChakraTable.Body>
-              {loading
-                ? Array.from(Array(7).keys()).map((rowIndex) => (
-                    <ChakraTable.Row key={`skeleton-${rowIndex}`} background="table-background">
-                      {headerGroups[0]?.headers.map((header, cellIndex) => (
-                        <ChakraTable.Cell key={`skeleton-${rowIndex}-${cellIndex}`} style={{ width: header.getSize() }}>
-                          <Skeleton height="20px" />
-                        </ChakraTable.Cell>
-                      ))}
-                    </ChakraTable.Row>
-                  ))
-                : rows.map((row) => (
-                    <ChakraTable.Row key={row.id} background="table-background">
-                      {row.getVisibleCells().map((cell) => (
-                        <ChakraTable.Cell key={cell.id} style={{ width: cell.column.getSize() }}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </ChakraTable.Cell>
-                      ))}
-                    </ChakraTable.Row>
-                  ))}
+              {loading ? (
+                Array.from(Array(7).keys()).map((rowIndex) => (
+                  <ChakraTable.Row key={`skeleton-${rowIndex}`} background="table-background">
+                    {headerGroups[0]?.headers.map((header, cellIndex) => (
+                      <ChakraTable.Cell key={`skeleton-${rowIndex}-${cellIndex}`} style={{ width: header.getSize() }}>
+                        <Skeleton height="20px" />
+                      </ChakraTable.Cell>
+                    ))}
+                  </ChakraTable.Row>
+                ))
+              ) : rows.length === 0 ? (
+                <ChakraTable.Row background="table-background">
+                  <ChakraTable.Cell width="full" height="100px" colSpan={5}>
+                    <HStack justifyContent="center">
+                      <Text fontSize="16px" fontWeight="600">
+                        No pools
+                      </Text>
+                    </HStack>
+                  </ChakraTable.Cell>
+                </ChakraTable.Row>
+              ) : (
+                rows.map((row) => (
+                  <ChakraTable.Row key={row.id} background="table-background">
+                    {row.getVisibleCells().map((cell) => (
+                      <ChakraTable.Cell key={cell.id} style={{ width: cell.column.getSize() }}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </ChakraTable.Cell>
+                    ))}
+                  </ChakraTable.Row>
+                ))
+              )}
             </ChakraTable.Body>
           </ChakraTable.Root>
         </ChakraTable.ScrollArea>

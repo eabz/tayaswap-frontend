@@ -27,10 +27,10 @@ interface ITayaSwapRouter {
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
-    approveMax: boolean,
     v: bigint,
     r: string,
-    s: string
+    s: string,
+    deadline: bigint
   ) => Promise<void>
 }
 
@@ -103,10 +103,10 @@ export const useTayaSwapRouter = (): ITayaSwapRouter => {
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
-    approveMax: boolean,
     v: bigint,
     r: string,
-    s: string
+    s: string,
+    deadline: bigint
   ): Promise<void> => {
     const totalSupply = parseUnits(pool.totalSupply, 18)
     const reserve0 = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
@@ -128,13 +128,11 @@ export const useTayaSwapRouter = (): ITayaSwapRouter => {
     const minTokenAmount = (expectedTokenAmount * BigInt(100 - slippage)) / 100n
     const minETHAmount = (expectedETHAmount * BigInt(100 - slippage)) / 100n
 
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60)
-
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
       abi: ROUTER_ABI,
       functionName: 'removeLiquidityETHWithPermit',
-      args: [token.id, liquidity, minTokenAmount, minETHAmount, toAddress, deadline, approveMax, v, r, s],
+      args: [token.id, liquidity, minTokenAmount, minETHAmount, toAddress, deadline, false, v, r, s],
       chain: client.chain,
       account: client.account as Account
     })

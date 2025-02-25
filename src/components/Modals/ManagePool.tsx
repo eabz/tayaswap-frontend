@@ -90,7 +90,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
   const { data: walletClient } = useWalletClient()
   const { address, chainId } = useAccount()
 
-  const { getPermitSignature } = usePermitSignature({ chainId, tokenAddress: pool.id, owner: address })
+  const { getPermitSignature } = usePermitSignature({ chainId, pair: pool, owner: address })
 
   const { removeLiquidity, removeLiquidityETHWithPermit } = useTayaSwapRouter()
   const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
@@ -125,9 +125,9 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
   }, [poolBalances, withdrawValue, pool.id])
 
   const [loadingWithdrawal, setLoadingWithdrawal] = useState(false)
-  const [signature, setSignature] = useState<{ v: bigint | undefined; r: `0x${string}`; s: `0x${string}` } | undefined>(
-    undefined
-  )
+  const [signature, setSignature] = useState<
+    { v: bigint | undefined; r: `0x${string}`; s: `0x${string}`; deadline: bigint } | undefined
+  >(undefined)
 
   const handleWithdraw = async () => {
     const slippage = 5
@@ -146,10 +146,10 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
           address,
           walletClient,
           pool,
-          poolBalanceWithdraw === poolBalances[pool.id].balance,
           signature.v,
           signature.r,
-          signature.s
+          signature.s,
+          signature.deadline
         )
       } else {
         await removeLiquidity(pool.token0, pool.token1, poolBalanceWithdraw, slippage, address, walletClient, pool)
@@ -168,7 +168,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
     setLoadingWithdrawal(true)
 
     try {
-      const signature = await getPermitSignature(chainId, pool.id, {
+      const signature = await getPermitSignature(chainId, pool, {
         owner: address,
         spender: ROUTER_ADDRESS,
         value: poolBalanceWithdraw

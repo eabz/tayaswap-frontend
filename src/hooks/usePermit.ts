@@ -1,3 +1,4 @@
+import type { IPairData } from '@/services'
 import { PAIR_ABI } from '@/utils/abis/pair'
 import { parseSignature } from 'viem'
 import { useReadContract, useSignTypedData } from 'wagmi'
@@ -10,14 +11,14 @@ interface IPermitParams {
 
 export function usePermitSignature({
   chainId,
-  tokenAddress,
+  pair,
   owner
-}: { chainId: number | undefined; tokenAddress: string; owner: string | undefined }) {
+}: { chainId: number | undefined; pair: IPairData; owner: string | undefined }) {
   const { signTypedDataAsync } = useSignTypedData()
 
   const { data: nonce } = useReadContract({
     chainId,
-    address: tokenAddress as `0x${string}`,
+    address: pair.id as `0x${string}`,
     abi: PAIR_ABI,
     functionName: 'nonces',
     args: [owner]
@@ -25,17 +26,17 @@ export function usePermitSignature({
 
   const getPermitSignature = async (
     chainId: number,
-    tokenAddress: string,
+    pair: IPairData,
     permit: IPermitParams
-  ): Promise<{ v: bigint | undefined; r: `0x${string}`; s: `0x${string}` }> => {
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 100)
+  ): Promise<{ v: bigint | undefined; r: `0x${string}`; s: `0x${string}`; deadline: bigint }> => {
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 100_000)
 
     const signature = await signTypedDataAsync({
       domain: {
         name: 'Swap LPs',
         version: '1',
-        chainId: BigInt(chainId),
-        verifyingContract: tokenAddress as `0x${string}`
+        chainId,
+        verifyingContract: pair.id as `0x${string}`
       },
       types: {
         // biome-ignore lint/style/useNamingConvention: variables must match uppercase
@@ -58,7 +59,8 @@ export function usePermitSignature({
     })
 
     const { v, r, s } = parseSignature(signature)
-    return { v, r, s }
+
+    return { v, r, s, deadline }
   }
 
   return { getPermitSignature }
