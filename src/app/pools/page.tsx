@@ -243,6 +243,7 @@ export default function Page() {
           <GridItem colSpan={1}>
             <HStack width="full" justifyContent="end">
               <ActionButton
+                disabled
                 text="Create Pool"
                 onClickHandler={handlePoolCreate}
                 rounded="full"
