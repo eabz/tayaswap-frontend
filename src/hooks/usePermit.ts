@@ -11,14 +11,14 @@ interface IPermitParams {
 
 export function usePermitSignature({
   chainId,
-  pair,
+  pool,
   owner
-}: { chainId: number | undefined; pair: IPairData; owner: string | undefined }) {
+}: { chainId: number | undefined; pool: IPairData; owner: string | undefined }) {
   const { signTypedDataAsync } = useSignTypedData()
 
   const { data: nonce } = useReadContract({
     chainId,
-    address: pair.id as `0x${string}`,
+    address: pool.id as `0x${string}`,
     abi: PAIR_ABI,
     functionName: 'nonces',
     args: [owner]

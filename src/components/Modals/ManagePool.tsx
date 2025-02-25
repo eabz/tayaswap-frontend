@@ -30,13 +30,6 @@ import { ChevronLeftIcon, CloseIcon } from '../Icons'
 import { Slider } from '../Slider'
 import { TokenIconGroup } from '../TokenIcon'
 
-export interface IManagePoolModalProps {
-  pool: IPairData
-  open: boolean
-  onClose: () => void
-  close: () => void
-}
-
 enum View {
   Selector = 0,
   AddLiquidity = 1,
@@ -83,22 +76,85 @@ export function calculateWithdrawAmounts(
   }
 }
 
-export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModalProps) {
-  const [view, setView] = useState(View.Selector)
-  const [direction, setDirection] = useState(0)
+interface IViewProps {
+  direction: number
+  changeView: (view: View) => void
+  pool: IPairData
+}
 
-  const { data: walletClient } = useWalletClient()
+function SelectActionView({ direction, changeView }: IViewProps) {
+  return (
+    <motion.div
+      key="selector"
+      custom={direction}
+      variants={VARIANTS}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={{ duration: 0.3 }}
+      style={{ position: 'absolute', width: '100%' }}
+    >
+      <VStack height="325px" justifyContent="center" alignItems="center" gap="30px">
+        <Button
+          background="modal-selector-button-background"
+          color="button-group-button-active-color"
+          _hover={{ background: 'button-group-button-background' }}
+          onClick={() => changeView(View.AddLiquidity)}
+          rounded="15px"
+          width="300px"
+          height="90px"
+        >
+          <VStack width="full" alignItems="start">
+            <Text fontSize="18px" fontWeight="600">
+              Add Liquidity
+            </Text>
+            <Text fontWeight="300">Increase the amount of tokens in the pool.</Text>
+          </VStack>
+        </Button>
+        <Button
+          background="modal-selector-button-background"
+          color="button-group-button-active-color"
+          _hover={{ background: 'button-group-button-background' }}
+          onClick={() => changeView(View.RemoveLiquidity)}
+          width="300px"
+          rounded="15px"
+          height="90px"
+        >
+          <VStack width="full" alignItems="start">
+            <Text fontSize="18px" fontWeight="600">
+              Remove Liquidity
+            </Text>
+            <Text fontWeight="300">Reduce the amount of tokens in the pool.</Text>
+          </VStack>
+        </Button>
+      </VStack>
+    </motion.div>
+  )
+}
+
+function AddLiquidityView({ direction }: IViewProps) {
+  return (
+    <motion.div
+      key="addLiquidity"
+      custom={direction}
+      variants={VARIANTS}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={{ duration: 0.3 }}
+      style={{ position: 'absolute', width: '100%' }}
+    >
+      <Text textAlign="center">Add Liquidity Content</Text>
+    </motion.div>
+  )
+}
+
+function RemoveLiquidityView({ direction, pool }: IViewProps) {
   const { address, chainId } = useAccount()
 
-  const { getPermitSignature } = usePermitSignature({ chainId, pair: pool, owner: address })
-
-  const { removeLiquidity, removeLiquidityETHWithPermit } = useTayaSwapRouter()
   const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
 
-  const changeView = (newView: View) => {
-    setDirection(newView > view ? 1 : -1)
-    setView(newView)
-  }
+  const [withdrawValue, setWithdrawValue] = useState(50)
 
   const { amountToken0, amountToken1 } = calculateWithdrawAmounts(
     getFormattedPoolBalance(pool.id),
@@ -107,7 +163,6 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
     { reserve: pool.reserve1, decimals: pool.token1.decimals }
   )
 
-  const [withdrawValue, setWithdrawValue] = useState(50)
   const handleSliderChange = (value: number) => setWithdrawValue(value)
 
   const amount0Withdraw = useMemo(() => {
@@ -128,6 +183,12 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
   const [signature, setSignature] = useState<
     { v: bigint | undefined; r: `0x${string}`; s: `0x${string}`; deadline: bigint } | undefined
   >(undefined)
+
+  const { data: walletClient } = useWalletClient()
+
+  const { getPermitSignature } = usePermitSignature({ chainId, pool, owner: address })
+
+  const { removeLiquidityWithPermit, removeLiquidityETHWithPermit } = useTayaSwapRouter()
 
   const handleWithdraw = async () => {
     const slippage = 5
@@ -152,7 +213,19 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
           signature.deadline
         )
       } else {
-        await removeLiquidity(pool.token0, pool.token1, poolBalanceWithdraw, slippage, address, walletClient, pool)
+        await removeLiquidityWithPermit(
+          pool.token0,
+          pool.token1,
+          poolBalanceWithdraw,
+          slippage,
+          address,
+          walletClient,
+          pool,
+          signature.v,
+          signature.r,
+          signature.s,
+          signature.deadline
+        )
       }
     } catch (e) {
       console.error('Withdrawal error:', e)
@@ -180,6 +253,129 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
     }
 
     setLoadingWithdrawal(false)
+  }
+
+  return (
+    <motion.div
+      key="removeLiquidity"
+      custom={direction}
+      variants={VARIANTS}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={{ duration: 0.3 }}
+      style={{ position: 'absolute', width: '100%' }}
+    >
+      <VStack width="full" gap="10px">
+        <HStack justifyContent="space-between" width="full" px="5">
+          <Text fontSize="14px" fontWeight="400">
+            Your position
+          </Text>
+          <HStack alignItems="center">
+            <TokenIconGroup token0={pool.token0.id} token1={pool.token1.id} size="25px" />
+            <Text fontSize="xs" fontWeight="400">
+              {pool.token0.symbol}/{pool.token1.symbol}
+            </Text>
+          </HStack>
+        </HStack>
+        <HStack
+          background="modal-selector-button-background"
+          height="100px"
+          width="full"
+          borderRadius="10px"
+          px="5"
+          justifyContent="space-between"
+        >
+          <VStack>
+            <Text>{pool.token0.symbol}</Text>
+            <Text color="custom-green">{amountToken0}</Text>
+          </VStack>
+          <VStack>
+            <Text>{pool.token1.symbol}</Text>
+            <Text color="custom-green">{amountToken1}</Text>
+          </VStack>
+          <VStack>
+            <Text>Pool Tokens</Text>
+            <Text color="custom-green">{getFormattedPoolBalance(pool.id)}</Text>
+          </VStack>
+        </HStack>
+        <HStack justifyContent="space-between" width="full" px="5">
+          <Text fontSize="14px" fontWeight="400">
+            Withdraw Amount
+          </Text>
+        </HStack>
+        <HStack justifyContent="start" width="full" px="5">
+          <Text fontSize="20px" fontWeight="600" color="modal-title-color">
+            {withdrawValue}%
+          </Text>
+        </HStack>
+        <Box width="full">
+          <Slider value={withdrawValue} onChange={handleSliderChange} />
+        </Box>
+        <HStack justifyContent="space-between" alignItems="center" width="full" px="5">
+          <ActionButton
+            text="25%"
+            rounded="full"
+            height="25px"
+            width="60px"
+            size="xs"
+            onClickHandler={() => setWithdrawValue(25)}
+          />
+          <ActionButton
+            text="50%"
+            rounded="full"
+            height="25px"
+            width="60px"
+            size="xs"
+            onClickHandler={() => setWithdrawValue(50)}
+          />
+          <ActionButton
+            text="75%"
+            rounded="full"
+            height="25px"
+            width="60px"
+            size="xs"
+            onClickHandler={() => setWithdrawValue(75)}
+          />
+          <ActionButton
+            text="100%"
+            rounded="full"
+            height="25px"
+            width="60px"
+            size="xs"
+            onClickHandler={() => setWithdrawValue(100)}
+          />
+        </HStack>
+        <Box width="full" mt="5">
+          <SubmitButton
+            onClickHandler={signature ? handleWithdraw : handleSign}
+            text={signature ? 'Withdraw' : 'Sign'}
+            loading={loadingWithdrawal}
+            disabled={amount0Withdraw === 0n || amount1Withdraw === 0n}
+            width="full"
+            px="5"
+          />
+        </Box>
+      </VStack>
+    </motion.div>
+  )
+}
+
+export interface IManagePoolModalProps {
+  pool: IPairData
+  open: boolean
+  onClose: () => void
+  close: () => void
+}
+
+export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModalProps) {
+  const [view, setView] = useState(View.Selector)
+
+  const [direction, setDirection] = useState(0)
+
+  const changeView = (newView: View) => {
+    setDirection(newView > view ? 1 : -1)
+    setView(newView)
   }
 
   return (
@@ -228,171 +424,15 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
               <Box height="350px" position="relative" overflow="hidden">
                 <AnimatePresence initial={false} custom={direction}>
                   {view === View.Selector && (
-                    <motion.div
-                      key="selector"
-                      custom={direction}
-                      variants={VARIANTS}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{ duration: 0.3 }}
-                      style={{ position: 'absolute', width: '100%' }}
-                    >
-                      <VStack height="325px" justifyContent="center" alignItems="center" gap="30px">
-                        <Button
-                          background="modal-selector-button-background"
-                          color="button-group-button-active-color"
-                          _hover={{ background: 'button-group-button-background' }}
-                          onClick={() => changeView(View.AddLiquidity)}
-                          rounded="15px"
-                          width="300px"
-                          height="90px"
-                        >
-                          <VStack width="full" alignItems="start">
-                            <Text fontSize="18px" fontWeight="600">
-                              Add Liquidity
-                            </Text>
-                            <Text fontWeight="300">Increase the amount of tokens in the pool.</Text>
-                          </VStack>
-                        </Button>
-                        <Button
-                          background="modal-selector-button-background"
-                          color="button-group-button-active-color"
-                          _hover={{ background: 'button-group-button-background' }}
-                          onClick={() => changeView(View.RemoveLiquidity)}
-                          width="300px"
-                          rounded="15px"
-                          height="90px"
-                        >
-                          <VStack width="full" alignItems="start">
-                            <Text fontSize="18px" fontWeight="600">
-                              Remove Liquidity
-                            </Text>
-                            <Text fontWeight="300">Reduce the amount of tokens in the pool.</Text>
-                          </VStack>
-                        </Button>
-                      </VStack>
-                    </motion.div>
+                    <SelectActionView direction={direction} changeView={changeView} pool={pool} />
                   )}
 
                   {view === View.AddLiquidity && (
-                    <motion.div
-                      key="addLiquidity"
-                      custom={direction}
-                      variants={VARIANTS}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{ duration: 0.3 }}
-                      style={{ position: 'absolute', width: '100%' }}
-                    >
-                      <Text textAlign="center">Add Liquidity Content</Text>
-                    </motion.div>
+                    <AddLiquidityView direction={direction} changeView={changeView} pool={pool} />
                   )}
 
                   {view === View.RemoveLiquidity && (
-                    <motion.div
-                      key="removeLiquidity"
-                      custom={direction}
-                      variants={VARIANTS}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{ duration: 0.3 }}
-                      style={{ position: 'absolute', width: '100%' }}
-                    >
-                      <VStack width="full" gap="10px">
-                        <HStack justifyContent="space-between" width="full" px="5">
-                          <Text fontSize="14px" fontWeight="400">
-                            Your position
-                          </Text>
-                          <HStack alignItems="center">
-                            <TokenIconGroup token0={pool.token0.id} token1={pool.token1.id} size="25px" />
-                            <Text fontSize="xs" fontWeight="400">
-                              {pool.token0.symbol}/{pool.token1.symbol}
-                            </Text>
-                          </HStack>
-                        </HStack>
-                        <HStack
-                          background="modal-selector-button-background"
-                          height="100px"
-                          width="full"
-                          borderRadius="10px"
-                          px="5"
-                          justifyContent="space-between"
-                        >
-                          <VStack>
-                            <Text>{pool.token0.symbol}</Text>
-                            <Text color="custom-green">{amountToken0}</Text>
-                          </VStack>
-                          <VStack>
-                            <Text>{pool.token1.symbol}</Text>
-                            <Text color="custom-green">{amountToken1}</Text>
-                          </VStack>
-                          <VStack>
-                            <Text>Pool Tokens</Text>
-                            <Text color="custom-green">{getFormattedPoolBalance(pool.id)}</Text>
-                          </VStack>
-                        </HStack>
-                        <HStack justifyContent="space-between" width="full" px="5">
-                          <Text fontSize="14px" fontWeight="400">
-                            Withdraw Amount
-                          </Text>
-                        </HStack>
-                        <HStack justifyContent="start" width="full" px="5">
-                          <Text fontSize="20px" fontWeight="600" color="modal-title-color">
-                            {withdrawValue}%
-                          </Text>
-                        </HStack>
-                        <Box width="full">
-                          <Slider value={withdrawValue} onChange={handleSliderChange} />
-                        </Box>
-                        <HStack justifyContent="space-between" alignItems="center" width="full" px="5">
-                          <ActionButton
-                            text="25%"
-                            rounded="full"
-                            height="25px"
-                            width="60px"
-                            size="xs"
-                            onClickHandler={() => setWithdrawValue(25)}
-                          />
-                          <ActionButton
-                            text="50%"
-                            rounded="full"
-                            height="25px"
-                            width="60px"
-                            size="xs"
-                            onClickHandler={() => setWithdrawValue(50)}
-                          />
-                          <ActionButton
-                            text="75%"
-                            rounded="full"
-                            height="25px"
-                            width="60px"
-                            size="xs"
-                            onClickHandler={() => setWithdrawValue(75)}
-                          />
-                          <ActionButton
-                            text="100%"
-                            rounded="full"
-                            height="25px"
-                            width="60px"
-                            size="xs"
-                            onClickHandler={() => setWithdrawValue(100)}
-                          />
-                        </HStack>
-                        <Box width="full" mt="5">
-                          <SubmitButton
-                            onClickHandler={signature ? handleWithdraw : handleSign}
-                            text={signature ? 'Withdraw' : 'Sign'}
-                            loading={loadingWithdrawal}
-                            disabled={amount0Withdraw === 0n || amount1Withdraw === 0n}
-                            width="full"
-                            px="5"
-                          />
-                        </Box>
-                      </VStack>
-                    </motion.div>
+                    <RemoveLiquidityView direction={direction} changeView={changeView} pool={pool} />
                   )}
                 </AnimatePresence>
               </Box>

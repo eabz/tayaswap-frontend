@@ -184,7 +184,7 @@ export default function Page() {
 
   const [managePoolOpen, setManagePoolOpen] = useState(false)
 
-  const [managePoolId, setManagePoolId] = useState<IPairData | undefined>(undefined)
+  const [managePool, setManagePoolId] = useState<IPairData | undefined>(undefined)
 
   const handlePoolManage = (id: string) => {
     if (!pools) return
@@ -198,9 +198,9 @@ export default function Page() {
   }
 
   const handlePoolManageClose = async () => {
-    if (!address || !managePoolId) return
+    if (!address || !managePool) return
 
-    await reloadPoolBalances(address, [{ address: managePoolId.id, decimals: 18 }])
+    await reloadPoolBalances(address, [{ address: managePool.id, decimals: 18 }])
 
     setManagePoolId(undefined)
   }
@@ -208,10 +208,10 @@ export default function Page() {
   return (
     <>
       <CreatePoolsModal open={createPoolOpen} close={() => setCreatePoolOpen(false)} onClose={handleCreatePoolsClose} />
-      {managePoolId && (
+      {managePool && (
         <ManagePoolModal
           open={managePoolOpen}
-          pool={managePoolId}
+          pool={managePool}
           onClose={handlePoolManageClose}
           close={() => setManagePoolOpen(false)}
         />

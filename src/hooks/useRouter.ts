@@ -11,14 +11,18 @@ interface ITayaSwapRouter {
     pool: IPairData,
     slippage: number
   ) => bigint
-  removeLiquidity: (
+  removeLiquidityWithPermit: (
     token0: IPairTokenData,
     token1: IPairTokenData,
     liquidity: bigint,
     slippage: number,
     toAddress: string,
     client: WalletClient,
-    pool: IPairData
+    pool: IPairData,
+    v: bigint,
+    r: string,
+    s: string,
+    deadline: bigint
   ) => Promise<void>
   removeLiquidityETHWithPermit: (
     token: IPairTokenData,
@@ -63,14 +67,18 @@ export const useTayaSwapRouter = (): ITayaSwapRouter => {
     return minRequired
   }
 
-  const removeLiquidity = async (
+  const removeLiquidityWithPermit = async (
     token0: IPairTokenData,
     token1: IPairTokenData,
     liquidity: bigint,
     slippage: number,
     toAddress: string,
     client: WalletClient,
-    pool: IPairData
+    pool: IPairData,
+    v: bigint,
+    r: string,
+    s: string,
+    deadline: bigint
   ): Promise<void> => {
     const totalSupply = parseUnits(pool.totalSupply, 18)
     const reserve0 = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
@@ -82,13 +90,11 @@ export const useTayaSwapRouter = (): ITayaSwapRouter => {
     const minAmount0 = (expectedAmount0 * BigInt(100 - slippage)) / 100n
     const minAmount1 = (expectedAmount1 * BigInt(100 - slippage)) / 100n
 
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60)
-
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
       abi: ROUTER_ABI,
-      functionName: 'removeLiquidity',
-      args: [token0.id, token1.id, liquidity, minAmount0, minAmount1, toAddress, deadline],
+      functionName: 'removeLiquidityWithPermit',
+      args: [token0.id, token1.id, liquidity, minAmount0, minAmount1, toAddress, deadline, false, v, r, s],
       chain: client.chain,
       account: client.account as Account
     })
@@ -142,7 +148,7 @@ export const useTayaSwapRouter = (): ITayaSwapRouter => {
 
   return {
     calculateLiquidityCounterAmount,
-    removeLiquidity,
+    removeLiquidityWithPermit,
     removeLiquidityETHWithPermit
   }
 }
