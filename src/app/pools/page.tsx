@@ -4,10 +4,12 @@ import { ActionButton, Input, ManagePoolModal, PlusOutlineIcon, SearchIcon, Tabl
 import { CreatePoolsModal } from '@/components/Modals/CreatePool'
 import { type IPairData, usePools } from '@/services'
 import { useTokenBalancesStore, useTokenListStore } from '@/stores'
+import { WETH_ADDRESS } from '@/utils'
 import { Box, Button, ButtonGroup, GridItem, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table'
 import { matchSorter } from 'match-sorter'
 import { useMemo, useState } from 'react'
+import { zeroAddress } from 'viem'
 import { useAccount } from 'wagmi'
 
 interface IPoolData {
@@ -168,15 +170,18 @@ export default function Page() {
 
     const tokenList = fullTokenList()
 
-    const token0Data = tokenList.find((token) => token.address === token0)
+    const token0Address = token0 === WETH_ADDRESS ? zeroAddress : token0
+    const token1Address = token1 === WETH_ADDRESS ? zeroAddress : token1
 
-    const token1Data = tokenList.find((token) => token.address === token1)
+    const token0Data = tokenList.find((token) => token.address === token0Address)
+
+    const token1Data = tokenList.find((token) => token.address === token1Address)
 
     if (!token0Data || !token1Data) return
 
     await reloadTokenBalances(address, [
-      { address: token0, decimals: token0Data.decimals },
-      { address: token1, decimals: token1Data.decimals }
+      { address: token0Address, decimals: token0Data.decimals },
+      { address: token1Address, decimals: token1Data.decimals }
     ])
 
     await reloadPoolBalances(address, [{ address: newPool, decimals: 8 }])
@@ -203,8 +208,8 @@ export default function Page() {
     await Promise.all([
       reloadPoolBalances(address, [{ address: managePool.id, decimals: 18 }]),
       reloadTokenBalances(address, [
-        { address: managePool.token0.id, decimals: Number.parseInt(managePool.token0.decimals) },
-        { address: managePool.token1.id, decimals: Number.parseInt(managePool.token1.decimals) }
+        { address: managePool.token0.id, decimals: Number(managePool.token0.decimals) },
+        { address: managePool.token1.id, decimals: Number(managePool.token1.decimals) }
       ])
     ])
 

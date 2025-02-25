@@ -21,7 +21,7 @@ import {
   VStack
 } from '@chakra-ui/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { parseUnits, zeroAddress } from 'viem'
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { ActionButton, SubmitButton } from '../Buttons'
@@ -30,8 +30,8 @@ import { TokenAmountInput } from '../Input'
 import { Slider } from '../Slider'
 import { TokenIconGroup } from '../TokenIcon'
 
-// TODO: put it into a global state
-const SLIPPAGE = 5
+// TODO: Change to a global state
+const SLIPPAGE = 1
 
 enum View {
   Selector = 0,
@@ -66,10 +66,8 @@ export function calculateWithdrawAmounts(
 
   const userLiquidity = parseUnits(userBalance, 18)
   const totalSupplyAmount = parseUnits(totalSupply, 18)
-
-  const token0Decimals = Number.parseInt(token0.decimals)
-  const token1Decimals = Number.parseInt(token1.decimals)
-
+  const token0Decimals = Number(token0.decimals)
+  const token1Decimals = Number(token1.decimals)
   const token0Reserve = parseUnits(token0.reserve, token0Decimals)
   const token1Reserve = parseUnits(token1.reserve, token1Decimals)
 
@@ -81,7 +79,7 @@ export function calculateWithdrawAmounts(
 
 interface IViewProps {
   direction: number
-  changeView: (view: View) => void
+  changeView?: (view: View) => void
   pool: IPairData
   close: () => void
 }
@@ -98,17 +96,17 @@ function SelectActionView({ direction, changeView }: IViewProps) {
       transition={{ duration: 0.3 }}
       style={{ position: 'absolute', width: '100%' }}
     >
-      <VStack height="325px" justifyContent="center" alignItems="center" gap="30px">
+      <VStack height="400px" justifyContent="center" alignItems="center" gap="30px">
         <Button
           background="modal-selector-button-background"
           color="button-group-button-active-color"
           _hover={{ background: 'button-group-button-background' }}
-          onClick={() => changeView(View.AddLiquidity)}
+          onClick={() => changeView?.(View.AddLiquidity)}
           rounded="15px"
           width="300px"
-          height="90px"
+          height="120px"
         >
-          <VStack width="full" alignItems="start">
+          <VStack width="full" alignItems="start" height="full" justifyContent="center">
             <Text fontSize="18px" fontWeight="600">
               Add Liquidity
             </Text>
@@ -119,12 +117,12 @@ function SelectActionView({ direction, changeView }: IViewProps) {
           background="modal-selector-button-background"
           color="button-group-button-active-color"
           _hover={{ background: 'button-group-button-background' }}
-          onClick={() => changeView(View.RemoveLiquidity)}
+          onClick={() => changeView?.(View.RemoveLiquidity)}
           width="300px"
           rounded="15px"
-          height="90px"
+          height="120px"
         >
-          <VStack width="full" alignItems="start">
+          <VStack width="full" alignItems="start" height="full" justifyContent="center">
             <Text fontSize="18px" fontWeight="600">
               Remove Liquidity
             </Text>
@@ -152,23 +150,32 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
-
   const { calculateLiquidityCounterAmount, addLiquidity, addLiquidityETH } = useTayaSwapRouter()
 
-  const getBalance = (tokenAddress: string): bigint =>
-    tokenAddress === WETH_ADDRESS
-      ? tokenBalances[zeroAddress]?.balance || 0n
-      : tokenBalances[tokenAddress]?.balance || 0n
+  const getBalance = useCallback(
+    (tokenAddress: string): bigint => {
+      return tokenAddress === WETH_ADDRESS
+        ? tokenBalances[zeroAddress]?.balance || 0n
+        : tokenBalances[tokenAddress]?.balance || 0n
+    },
+    [tokenBalances]
+  )
 
-  const getFormattedBalance = (tokenAddress: string): string =>
-    tokenAddress === WETH_ADDRESS ? getFormattedTokenBalance(zeroAddress) : getFormattedTokenBalance(tokenAddress)
+  const getFormattedBalance = useCallback(
+    (tokenAddress: string): string => {
+      return tokenAddress === WETH_ADDRESS
+        ? getFormattedTokenBalance(zeroAddress)
+        : getFormattedTokenBalance(tokenAddress)
+    },
+    [getFormattedTokenBalance]
+  )
 
   useEffect(() => {
     if (!address || !token0Value || token0Value === '0' || !publicClient || pool.token0.id === WETH_ADDRESS) {
       setToken0Approved(true)
       return
     }
-    const amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
+    const amount = parseUnits(token0Value, Number(pool.token0.decimals))
     approved(address, pool.token0.id, amount, publicClient)
       .then(setToken0Approved)
       .catch((err) => console.error(err))
@@ -179,47 +186,51 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       setToken1Approved(true)
       return
     }
-    const amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
+    const amount = parseUnits(token1Value, Number(pool.token1.decimals))
     approved(address, pool.token1.id, amount, publicClient)
       .then(setToken1Approved)
       .catch((err) => console.error(err))
   }, [address, token1Value, pool.token1.id, pool.token1.decimals, publicClient, approved])
 
-  const handleToken0ValueChange = (value: string) => {
-    setLoadingToken1(true)
-    setToken0Value(value)
+  const handleToken0ValueChange = useCallback(
+    (value: string) => {
+      setLoadingToken1(true)
+      setToken0Value(value)
+      try {
+        const inputAmount = parseUnits(value, Number(pool.token0.decimals))
+        const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token0.id, pool)
+        const formattedOutput = formatTokenBalance(outputAmount, Number(pool.token1.decimals))
+        setToken1Value(formattedOutput)
+      } catch (error) {
+        console.error('Error calculating trade output for token0:', error)
+      }
+      setLoadingToken1(false)
+    },
+    [pool, calculateLiquidityCounterAmount]
+  )
 
-    try {
-      const inputAmount = parseUnits(value, Number.parseInt(pool.token0.decimals))
-      const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token0.id, pool, SLIPPAGE)
-      const formattedOutput = formatTokenBalance(outputAmount, Number.parseInt(pool.token1.decimals))
-      setToken1Value(formattedOutput)
-    } catch (error) {
-      console.error('Error calculating trade output for token0:', error)
-    }
-    setLoadingToken1(false)
-  }
+  const handleToken1ValueChange = useCallback(
+    (value: string) => {
+      setLoadingToken0(true)
+      setToken1Value(value)
+      try {
+        const inputAmount = parseUnits(value, Number(pool.token1.decimals))
+        const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token1.id, pool)
+        const formattedOutput = formatTokenBalance(outputAmount, Number(pool.token0.decimals))
+        setToken0Value(formattedOutput)
+      } catch (error) {
+        console.error('Error calculating trade output for token1:', error)
+      }
+      setLoadingToken0(false)
+    },
+    [pool, calculateLiquidityCounterAmount]
+  )
 
-  const handleToken1ValueChange = (value: string) => {
-    setLoadingToken0(true)
-    setToken1Value(value)
-
-    try {
-      const inputAmount = parseUnits(value, Number.parseInt(pool.token1.decimals))
-      const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token1.id, pool, SLIPPAGE)
-      const formattedOutput = formatTokenBalance(outputAmount, Number.parseInt(pool.token0.decimals))
-      setToken0Value(formattedOutput)
-    } catch (error) {
-      console.error('Error calculating trade output for token1:', error)
-    }
-    setLoadingToken0(false)
-  }
-
-  const handleApproveToken0 = async () => {
+  const handleApproveToken0 = useCallback(async () => {
     if (!walletClient || !publicClient) return
     setLoadingApproveToken0(true)
     try {
-      const amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
+      const amount = parseUnits(token0Value, Number(pool.token0.decimals))
       await approve(pool.token0.id, amount, walletClient)
       if (address) {
         const isApproved = await approved(address, pool.token0.id, amount, publicClient)
@@ -229,13 +240,13 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       console.error('Error approving token0:', err)
     }
     setLoadingApproveToken0(false)
-  }
+  }, [token0Value, pool.token0, walletClient, publicClient, address, approve, approved])
 
-  const handleApproveToken1 = async () => {
+  const handleApproveToken1 = useCallback(async () => {
     if (!walletClient || !publicClient) return
     setLoadingApproveToken1(true)
     try {
-      const amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
+      const amount = parseUnits(token1Value, Number(pool.token1.decimals))
       await approve(pool.token1.id, amount, walletClient)
       if (address) {
         const isApproved = await approved(address, pool.token1.id, amount, publicClient)
@@ -245,23 +256,26 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       console.error('Error approving token1:', err)
     }
     setLoadingApproveToken1(false)
-  }
+  }, [token1Value, pool.token1, walletClient, publicClient, address, approve, approved])
 
   const token0Balance: bigint = getBalance(pool.token0.id)
   const token1Balance: bigint = getBalance(pool.token1.id)
 
-  let token0ValueBigInt = 0n
-  let token1ValueBigInt = 0n
-  try {
-    token0ValueBigInt = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
-  } catch (error) {
-    console.error('Error parsing token0 value', error)
-  }
-  try {
-    token1ValueBigInt = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
-  } catch (error) {
-    console.error('Error parsing token1 value', error)
-  }
+  const token0ValueBigInt = useMemo(() => {
+    try {
+      return parseUnits(token0Value, Number(pool.token0.decimals))
+    } catch {
+      return 0n
+    }
+  }, [token0Value, pool.token0.decimals])
+
+  const token1ValueBigInt = useMemo(() => {
+    try {
+      return parseUnits(token1Value, Number(pool.token1.decimals))
+    } catch {
+      return 0n
+    }
+  }, [token1Value, pool.token1.decimals])
 
   const hasSufficientToken0 = token0ValueBigInt <= token0Balance
   const hasSufficientToken1 = token1ValueBigInt <= token1Balance
@@ -274,16 +288,13 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
     hasSufficientToken0 &&
     hasSufficientToken1
 
-  const handleAddLiquidity = async () => {
+  const handleAddLiquidity = useCallback(async () => {
     if (!walletClient || !address) return
-
     setLoadingAddLiquidity(true)
-
     try {
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 100_000)
-
-      const token0Amount = parseUnits(token0Value, Number.parseInt(pool.token0.decimals))
-      const token1Amount = parseUnits(token1Value, Number.parseInt(pool.token1.decimals))
+      const token0Amount = parseUnits(token0Value, Number(pool.token0.decimals))
+      const token1Amount = parseUnits(token1Value, Number(pool.token1.decimals))
 
       if (pool.token0.id === WETH_ADDRESS || pool.token1.id === WETH_ADDRESS) {
         let token: IPairTokenData
@@ -311,12 +322,13 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
           deadline
         )
       }
+
+      close()
     } catch (error) {
       console.error('Error adding liquidity:', error)
     }
     setLoadingAddLiquidity(false)
-    close()
-  }
+  }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close])
 
   return (
     <motion.div
@@ -401,38 +413,28 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
           </VStack>
         )}
 
-        {token0Approved && token1Approved && (
-          <Box width="full" mt="20px">
-            <SubmitButton
-              width="full"
-              loading={loadingAddLiquidity}
-              text="Add Liquidity"
-              onClickHandler={handleAddLiquidity}
-              disabled={!canAddLiquidity}
-            />
-          </Box>
-        )}
-
-        <VStack width="full" gap="3px">
-          {!token0Approved && hasSufficientToken0 && (
-            <SubmitButton
-              width="full"
-              disabled={false}
-              loading={loadingApproveToken0}
-              text={`Approve ${pool.token0.symbol}`}
-              onClickHandler={handleApproveToken0}
-            />
-          )}
-
-          {!token1Approved && hasSufficientToken1 && (
-            <SubmitButton
-              width="full"
-              disabled={false}
-              loading={loadingApproveToken1}
-              text={`Approve ${pool.token1.symbol}`}
-              onClickHandler={handleApproveToken1}
-            />
-          )}
+        <VStack width="full" gap="10px">
+          <SubmitButton
+            width="full"
+            disabled={token0Approved || !hasSufficientToken0}
+            loading={loadingApproveToken0}
+            text={`Approve ${pool.token0.symbol}`}
+            onClickHandler={handleApproveToken0}
+          />
+          <SubmitButton
+            width="full"
+            disabled={token1Approved || !hasSufficientToken1}
+            loading={loadingApproveToken1}
+            text={`Approve ${pool.token1.symbol}`}
+            onClickHandler={handleApproveToken1}
+          />
+          <SubmitButton
+            width="full"
+            loading={loadingAddLiquidity}
+            text="Add Liquidity"
+            onClickHandler={handleAddLiquidity}
+            disabled={!token0Approved || !token1Approved || !canAddLiquidity}
+          />
         </VStack>
       </VStack>
     </motion.div>
@@ -446,6 +448,16 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
 
   const [withdrawValue, setWithdrawValue] = useState(50)
 
+  const { data: walletClient } = useWalletClient()
+
+  const { getPermitSignature } = usePermitSignature({ chainId, pool, owner: address })
+
+  const { removeLiquidityWithPermit, removeLiquidityETHWithPermit } = useTayaSwapRouter()
+
+  const [signature, setSignature] = useState<
+    { v: bigint | undefined; r: `0x${string}`; s: `0x${string}`; deadline: bigint } | undefined
+  >(undefined)
+
   const { amountToken0, amountToken1 } = calculateWithdrawAmounts(
     getFormattedPoolBalance(pool.id),
     pool.totalSupply,
@@ -453,15 +465,18 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     { reserve: pool.reserve1, decimals: pool.token1.decimals }
   )
 
-  const handleSliderChange = (value: number) => setWithdrawValue(value)
+  const handleSliderChange = useCallback((value: number) => {
+    setSignature(undefined)
+    setWithdrawValue(value)
+  }, [])
 
   const amount0Withdraw = useMemo(() => {
-    const token0Balance = parseUnits(amountToken0, Number.parseInt(pool.token0.decimals))
+    const token0Balance = parseUnits(amountToken0, Number(pool.token0.decimals))
     return (token0Balance * BigInt(withdrawValue)) / 100n
   }, [amountToken0, pool.token0.decimals, withdrawValue])
 
   const amount1Withdraw = useMemo(() => {
-    const token1Balance = parseUnits(amountToken1, Number.parseInt(pool.token1.decimals))
+    const token1Balance = parseUnits(amountToken1, Number(pool.token1.decimals))
     return (token1Balance * BigInt(withdrawValue)) / 100n
   }, [amountToken1, pool.token1.decimals, withdrawValue])
 
@@ -470,17 +485,8 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
   }, [poolBalances, withdrawValue, pool.id])
 
   const [loadingWithdrawal, setLoadingWithdrawal] = useState(false)
-  const [signature, setSignature] = useState<
-    { v: bigint | undefined; r: `0x${string}`; s: `0x${string}`; deadline: bigint } | undefined
-  >(undefined)
 
-  const { data: walletClient } = useWalletClient()
-
-  const { getPermitSignature } = usePermitSignature({ chainId, pool, owner: address })
-
-  const { removeLiquidityWithPermit, removeLiquidityETHWithPermit } = useTayaSwapRouter()
-
-  const handleWithdraw = async () => {
+  const handleWithdraw = useCallback(async () => {
     if (!address || !walletClient || !signature || !signature.v) return
 
     setLoadingWithdrawal(true)
@@ -516,33 +522,40 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
           signature.deadline
         )
       }
+
+      close()
     } catch (e) {
       console.error('Withdrawal error:', e)
     }
-
     setLoadingWithdrawal(false)
-    close()
-  }
+  }, [
+    address,
+    walletClient,
+    signature,
+    pool,
+    poolBalanceWithdraw,
+    removeLiquidityETHWithPermit,
+    removeLiquidityWithPermit,
+    close
+  ])
 
-  const handleSign = async () => {
+  const [loadingSign, setLoadingSign] = useState(false)
+
+  const handleSign = useCallback(async () => {
     if (!walletClient || !chainId || !address) return
-
-    setLoadingWithdrawal(true)
-
+    setLoadingSign(true)
     try {
-      const signature = await getPermitSignature(chainId, pool, {
+      const sig = await getPermitSignature(chainId, pool, {
         owner: address,
         spender: ROUTER_ADDRESS,
         value: poolBalanceWithdraw
       })
-
-      setSignature(signature)
+      setSignature(sig)
     } catch (e) {
       console.error('Signature error:', e)
     }
-
-    setLoadingWithdrawal(false)
-  }
+    setLoadingSign(false)
+  }, [walletClient, chainId, address, getPermitSignature, pool, poolBalanceWithdraw])
 
   return (
     <motion.div
@@ -608,7 +621,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
             height="25px"
             width="60px"
             size="xs"
-            onClickHandler={() => setWithdrawValue(25)}
+            onClickHandler={() => handleSliderChange(25)}
           />
           <ActionButton
             text="50%"
@@ -616,7 +629,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
             height="25px"
             width="60px"
             size="xs"
-            onClickHandler={() => setWithdrawValue(50)}
+            onClickHandler={() => handleSliderChange(50)}
           />
           <ActionButton
             text="75%"
@@ -624,7 +637,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
             height="25px"
             width="60px"
             size="xs"
-            onClickHandler={() => setWithdrawValue(75)}
+            onClickHandler={() => handleSliderChange(75)}
           />
           <ActionButton
             text="100%"
@@ -632,19 +645,27 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
             height="25px"
             width="60px"
             size="xs"
-            onClickHandler={() => setWithdrawValue(100)}
+            onClickHandler={() => handleSliderChange(100)}
           />
         </HStack>
-        <Box width="full" mt="5">
+        <VStack width="full" mt="5">
           <SubmitButton
-            onClickHandler={signature ? handleWithdraw : handleSign}
-            text={signature ? 'Withdraw' : 'Sign'}
-            loading={loadingWithdrawal}
-            disabled={amount0Withdraw === 0n || amount1Withdraw === 0n}
+            onClickHandler={handleSign}
+            text={'Sign'}
+            loading={loadingSign}
+            disabled={!!signature || amount0Withdraw === 0n || amount1Withdraw === 0n}
             width="full"
             px="5"
           />
-        </Box>
+          <SubmitButton
+            onClickHandler={handleWithdraw}
+            text={'Withdraw'}
+            loading={loadingWithdrawal}
+            disabled={!signature || amount0Withdraw === 0n || amount1Withdraw === 0n}
+            width="full"
+            px="5"
+          />
+        </VStack>
       </VStack>
     </motion.div>
   )
@@ -659,13 +680,15 @@ export interface IManagePoolModalProps {
 
 export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModalProps) {
   const [view, setView] = useState(View.Selector)
-
   const [direction, setDirection] = useState(0)
 
-  const changeView = (newView: View) => {
-    setDirection(newView > view ? 1 : -1)
-    setView(newView)
-  }
+  const changeView = useCallback(
+    (newView: View) => {
+      setDirection(newView > view ? 1 : -1)
+      setView(newView)
+    },
+    [view]
+  )
 
   return (
     <Box position="absolute" width={{ base: 'full', lg: 'calc(100vw - 600px)' }} px="5" height="100vh">
@@ -710,16 +733,14 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
               </HStack>
             </DialogHeader>
             <DialogBody>
-              <Box height="350px" position="relative" overflow="hidden">
+              <Box height="400px" position="relative" overflow="hidden">
                 <AnimatePresence initial={false} custom={direction}>
                   {view === View.Selector && (
                     <SelectActionView direction={direction} changeView={changeView} pool={pool} close={close} />
                   )}
-
                   {view === View.AddLiquidity && (
                     <AddLiquidityView direction={direction} changeView={changeView} pool={pool} close={close} />
                   )}
-
                   {view === View.RemoveLiquidity && (
                     <RemoveLiquidityView direction={direction} changeView={changeView} pool={pool} close={close} />
                   )}

@@ -5,12 +5,7 @@ import { type Account, type WalletClient, parseUnits } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 
 interface ITayaSwapRouter {
-  calculateLiquidityCounterAmount: (
-    inputAmount: bigint,
-    inputToken: string,
-    pool: IPairData,
-    slippage: number
-  ) => bigint
+  calculateLiquidityCounterAmount: (inputAmount: bigint, inputToken: string, pool: IPairData) => bigint
   removeLiquidityWithPermit: (
     token0: IPairTokenData,
     token1: IPairTokenData,
@@ -59,30 +54,23 @@ interface ITayaSwapRouter {
 }
 
 export function useTayaSwapRouter(): ITayaSwapRouter {
-  const calculateLiquidityCounterAmount = (
-    inputAmount: bigint,
-    inputToken: string,
-    pool: IPairData,
-    slippage: number
-  ): bigint => {
+  const calculateLiquidityCounterAmount = (inputAmount: bigint, inputToken: string, pool: IPairData): bigint => {
     if (inputAmount === 0n) return 0n
 
-    const reserve0 = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
-    const reserve1 = parseUnits(pool.reserve1, Number.parseInt(pool.token1.decimals))
+    const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+    const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
 
-    let requiredCounter: bigint
+    let idealCounter: bigint
 
     if (inputToken === pool.token0.id) {
-      requiredCounter = (inputAmount * reserve1) / reserve0
+      idealCounter = (inputAmount * reserve1 + reserve0 - 1n) / reserve0
     } else if (inputToken === pool.token1.id) {
-      requiredCounter = (inputAmount * reserve0) / reserve1
+      idealCounter = (inputAmount * reserve0 + reserve1 - 1n) / reserve1
     } else {
       throw new Error('Input token is not part of this pool')
     }
 
-    const minRequired = (requiredCounter * (100n - BigInt(slippage))) / 100n
-
-    return minRequired
+    return idealCounter
   }
 
   const removeLiquidityWithPermit = async (
@@ -99,8 +87,8 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     deadline: bigint
   ): Promise<void> => {
     const totalSupply = parseUnits(pool.totalSupply, 18)
-    const reserve0 = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
-    const reserve1 = parseUnits(pool.reserve1, Number.parseInt(pool.token1.decimals))
+    const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+    const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
 
     const expectedAmount0 = (liquidity * reserve0) / totalSupply
     const expectedAmount1 = (liquidity * reserve1) / totalSupply
@@ -133,8 +121,8 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     deadline: bigint
   ): Promise<void> => {
     const totalSupply = parseUnits(pool.totalSupply, 18)
-    const reserve0 = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
-    const reserve1 = parseUnits(pool.reserve1, Number.parseInt(pool.token1.decimals))
+    const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+    const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
 
     let expectedTokenAmount: bigint
     let expectedETHAmount: bigint
@@ -171,11 +159,11 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     let reserveOut: bigint
 
     if (inputToken === pool.token0.id) {
-      reserveIn = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
-      reserveOut = parseUnits(pool.reserve1, Number.parseInt(pool.token1.decimals))
+      reserveIn = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+      reserveOut = parseUnits(pool.reserve1, Number(pool.token1.decimals))
     } else if (inputToken === pool.token1.id) {
-      reserveIn = parseUnits(pool.reserve1, Number.parseInt(pool.token1.decimals))
-      reserveOut = parseUnits(pool.reserve0, Number.parseInt(pool.token0.decimals))
+      reserveIn = parseUnits(pool.reserve1, Number(pool.token1.decimals))
+      reserveOut = parseUnits(pool.reserve0, Number(pool.token0.decimals))
     } else {
       throw new Error('Input token is not part of this pool')
     }
@@ -203,7 +191,6 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     client: WalletClient,
     deadline: bigint
   ): Promise<void> => {
-    // Calculate minimum amounts based on slippage
     const minAmountA = (amountADesired * BigInt(100 - slippage)) / 100n
     const minAmountB = (amountBDesired * BigInt(100 - slippage)) / 100n
 
