@@ -147,7 +147,7 @@ export function Sidebar() {
                 <Link href="https://x.com/sublabs_" external>
                   <XIcon h={5} />
                 </Link>
-                <Link href="#">
+                <Link href="https://discord.com/invite/tayafinance" external>
                   <DiscordIcon h={5} />
                 </Link>
                 <Link href="https://docs.taya.fi/" external>
