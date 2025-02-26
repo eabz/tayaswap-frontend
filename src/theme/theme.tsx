@@ -76,6 +76,27 @@ const SEMANTIC_TOKENS = {
     },
     'input-liquidity-background': {
       value: { _light: '#FAFAFA', _dark: '#131624' }
+    },
+    'swap-border': {
+      value: { _light: '#F3F4F6', _dark: '#1D2946' }
+    },
+    'swap-token-background': {
+      value: { _light: '#FAFAFA', _dark: '#131624' }
+    },
+    'swap-change-button-border': {
+      value: { _light: 'white', _dark: '#141B21' }
+    },
+    'swap-change-background': {
+      value: { _light: 'white', _dark: '#141B21' }
+    },
+    'token-selector-button-background': {
+      value: { _light: 'white', _dark: '#ffffff1a' }
+    },
+    'token-selector-border': {
+      value: { _light: '#E4E6E8', _dark: '#252C34' }
+    },
+    'token-selector-chevron-color': {
+      value: '#A7ACB0'
     }
   }
 }
@@ -86,6 +107,9 @@ const CONFIG = defineConfig({
       fontFamily: 'Nunito',
       color: 'text-color',
       fontWeight: '600'
+    },
+    '.swap-gradient': {
+      backgroundImage: 'linear-gradient(#142E78 #4762B9, var(--tw-gradient-stops))'
     }
   },
   theme: {

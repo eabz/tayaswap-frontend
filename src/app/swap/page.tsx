@@ -1,18 +1,16 @@
 'use client'
-import { Box, Center } from '@chakra-ui/react'
+
+import { Swap } from '@/components'
+import { Box, Center, HStack } from '@chakra-ui/react'
 
 export default function Page() {
-  //const { userTokenList, defaultTokenList } = useTokenListStore()
-
-  //const { tokenBalances } = useTokenBalancesStore()
-
-  //const { mobile } = useMobile()
-
   return (
     <Box pt="15px" mx={{ base: '15px', md: '20px', xl: '100px' }}>
-      <Center width="full" height="full">
-        Hello World!
-      </Center>
+      <HStack alignItems="center" position="relative" justifyContent="center" height="calc(100vh - 80px)">
+        <Center width="full" height="full">
+          <Swap />
+        </Center>
+      </HStack>
     </Box>
   )
 }

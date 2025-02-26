@@ -12,6 +12,7 @@ interface IActionButton extends ButtonProps {
 export function SubmitButton({ height = '45px', disabled, loading, text, onClickHandler, ...props }: IActionButton) {
   return (
     <Button
+      boxShadow="xs"
       onClick={onClickHandler}
       variant="outline"
       height={height}

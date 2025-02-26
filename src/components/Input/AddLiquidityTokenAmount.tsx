@@ -2,7 +2,7 @@ import { Box, Input as ChakraInput, HStack, type InputProps, Spinner, Text } fro
 import type { JSX } from 'react'
 import { TokenIcon } from '../TokenIcon'
 
-export interface ITokenAmountInputProps extends InputProps {
+export interface IAddLiquidityTokenAmountInputProps extends InputProps {
   onChangeHandler: (value: string) => void
   tokenAddress: string
   tokenSymbol: string
@@ -10,14 +10,14 @@ export interface ITokenAmountInputProps extends InputProps {
   hasEnough: boolean
 }
 
-export function TokenAmountInput({
+export function AddLiquidityTokenAmountInput({
   tokenSymbol,
   tokenAddress,
   loading,
   hasEnough,
   onChangeHandler,
   ...props
-}: ITokenAmountInputProps): JSX.Element {
+}: IAddLiquidityTokenAmountInputProps): JSX.Element {
   return (
     <HStack gap="1px" width="full" alignItems="center" color="text-contrast" position="relative">
       {loading ? (

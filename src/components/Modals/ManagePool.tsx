@@ -26,7 +26,7 @@ import { parseUnits, zeroAddress } from 'viem'
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { ActionButton, SubmitButton } from '../Buttons'
 import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../Icons'
-import { TokenAmountInput } from '../Input'
+import { AddLiquidityTokenAmountInput } from '../Input'
 import { Slider } from '../Slider'
 import { TokenIconGroup } from '../TokenIcon'
 
@@ -341,7 +341,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       transition={{ duration: 0.3 }}
       style={{ position: 'absolute', width: '100%' }}
     >
-      <VStack width="full" gap="15px" mt="20px">
+      <VStack height="400px" width="full" gap="15px" mt="20px">
         <HStack width="full" position="relative">
           <Box
             onClick={() => handleToken0ValueChange(getFormattedBalance(pool.token0.id))}
@@ -355,7 +355,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
               Available: {getFormattedBalance(pool.token0.id)}
             </Text>
           </Box>
-          <TokenAmountInput
+          <AddLiquidityTokenAmountInput
             hasEnough={hasSufficientToken0}
             loading={loadingToken0}
             value={token0Value}
@@ -388,7 +388,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
               Available: {getFormattedBalance(pool.token1.id)}
             </Text>
           </Box>
-          <TokenAmountInput
+          <AddLiquidityTokenAmountInput
             hasEnough={hasSufficientToken1}
             loading={loadingToken1}
             value={token1Value}
@@ -413,29 +413,39 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
           </VStack>
         )}
 
-        <VStack width="full" gap="10px">
-          <SubmitButton
-            width="full"
-            disabled={token0Approved || !hasSufficientToken0}
-            loading={loadingApproveToken0}
-            text={`Approve ${pool.token0.symbol}`}
-            onClickHandler={handleApproveToken0}
-          />
-          <SubmitButton
-            width="full"
-            disabled={token1Approved || !hasSufficientToken1}
-            loading={loadingApproveToken1}
-            text={`Approve ${pool.token1.symbol}`}
-            onClickHandler={handleApproveToken1}
-          />
-          <SubmitButton
-            width="full"
-            loading={loadingAddLiquidity}
-            text="Add Liquidity"
-            onClickHandler={handleAddLiquidity}
-            disabled={!token0Approved || !token1Approved || !canAddLiquidity}
-          />
-        </VStack>
+        <Center width="full" height="full">
+          <VStack width="full" gap="10px">
+            {pool.token0.id !== WETH_ADDRESS && (
+              <SubmitButton
+                width="full"
+                disabled={token0Approved || !hasSufficientToken0}
+                loading={loadingApproveToken0}
+                text={`Approve ${pool.token0.symbol}`}
+                onClickHandler={handleApproveToken0}
+              />
+            )}
+
+            {pool.token1.id !== WETH_ADDRESS && (
+              <SubmitButton
+                width="full"
+                disabled={token1Approved || !hasSufficientToken1}
+                loading={loadingApproveToken1}
+                text={`Approve ${pool.token1.symbol}`}
+                onClickHandler={handleApproveToken1}
+              />
+            )}
+
+            {hasSufficientToken0 && hasSufficientToken1 && (
+              <SubmitButton
+                width="full"
+                loading={loadingAddLiquidity}
+                text="Add Liquidity"
+                onClickHandler={handleAddLiquidity}
+                disabled={!token0Approved || !token1Approved || !canAddLiquidity}
+              />
+            )}
+          </VStack>
+        </Center>
       </VStack>
     </motion.div>
   )

@@ -1,2 +1,3 @@
 export * from './Input'
-export * from './TokenAmount'
+export * from './AddLiquidityTokenAmount'
+export * from './SwapTokenAmount'

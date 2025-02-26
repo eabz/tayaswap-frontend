@@ -7,9 +7,17 @@ interface IActionButton extends ButtonProps {
   text: string
   onClickHandler: () => void
   height?: string
+  fontSize?: string
 }
 
-export function ActionButton({ height = '45px', text, icon, onClickHandler, ...props }: IActionButton) {
+export function ActionButton({
+  fontSize = '16px',
+  height = '45px',
+  text,
+  icon,
+  onClickHandler,
+  ...props
+}: IActionButton) {
   return (
     <Button
       onClick={onClickHandler}
@@ -18,7 +26,7 @@ export function ActionButton({ height = '45px', text, icon, onClickHandler, ...p
       background="accent-button-background"
       color="accent-button-color"
       border="1px solid"
-      fontSize="16px"
+      fontSize={fontSize}
       borderColor="custom-blue"
       pr={icon ? 5 : undefined}
       _hover={{ background: 'custom-blue', color: 'white' }}
