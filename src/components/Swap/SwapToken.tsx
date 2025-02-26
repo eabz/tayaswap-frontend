@@ -10,7 +10,7 @@ interface ISwapTokenProps {
   tokenAddress: string
   tokenSymbol: string
   onTokenSelectorClick: () => void
-  onMaxClick: () => void
+  onMaxClick?: () => void
   onInputValueChange: (value: string) => void
   inputValue: string
   loading: boolean
@@ -48,7 +48,7 @@ export function SwapToken({
           <Text fontWeight="400" fontSize="14px">
             {max}
           </Text>
-          {direction === 'from' && (
+          {direction === 'from' && onMaxClick && (
             <ActionButton
               text="Max"
               rounded="full"

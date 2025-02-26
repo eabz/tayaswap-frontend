@@ -58,8 +58,11 @@ export async function findBestRoute(
   tokenIn: string,
   tokenOut: string,
   pools: IPairData[],
-  client: PublicClient
+  client: PublicClient,
+  slippage: number
 ): Promise<{ route: string[]; output: bigint }> {
+  if (inputAmount === 0n) return { route: [], output: 0n }
+
   function existsPool(tokenA: string, tokenB: string): boolean {
     for (let i = 0; i < pools.length; i++) {
       const p = pools[i]
@@ -110,8 +113,10 @@ export async function findBestRoute(
 
   let bestRoute: string[] = []
   let bestOutput = 0n
+
   for (let i = 0; i < routes.length; i++) {
     const route = routes[i]
+
     try {
       const amounts: bigint[] = (await client.readContract({
         address: ROUTER_ADDRESS,
@@ -130,7 +135,9 @@ export async function findBestRoute(
     }
   }
 
-  return { route: bestRoute, output: bestOutput }
+  const minOutput = (bestOutput * BigInt(100 - slippage)) / 100n
+
+  return { route: bestRoute, output: minOutput }
 }
 
 export function useTayaSwapRouter(): ITayaSwapRouter {

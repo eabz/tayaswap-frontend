@@ -13,6 +13,8 @@ import { GearIcon } from '../Icons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
 import { SwapToken } from './SwapToken'
 
+const SLIPPAGE = 1
+
 const DEFAULT_INITIAL_TOKEN_0 = {
   address: '0x760afe86e5de5fa0ee542fc7b7b713e1c5425701',
   chainId: 10143,
@@ -27,7 +29,7 @@ const DEFAULT_INITIAL_TOKEN_1 = {
   chainId: 10143,
   name: 'tayUSDT',
   symbol: 'tayUSDT',
-  decimals: 18,
+  decimals: 6,
   logoURI: 'https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/usdt.png'
 }
 
@@ -58,15 +60,10 @@ export function Swap() {
 
   const { getFormattedTokenBalance } = useTokenBalancesStore()
 
-  const handleToken0MaxClick = useCallback(() => {
+  const handleToken0MaxClick = () => {
     const max = getFormattedTokenBalance(token0.address)
     handleToken0InputChange(max)
-  }, [getFormattedTokenBalance, token0.address])
-
-  const handleToken1MaxClick = useCallback(() => {
-    const max = getFormattedTokenBalance(token1.address)
-    handleToken1InputChange(max)
-  }, [getFormattedTokenBalance, token1.address])
+  }
 
   const handleToken0InputChange = useCallback(
     async (value: string) => {
@@ -77,7 +74,14 @@ export function Swap() {
 
         const inputAmount = parseUnits(value, token0.decimals)
 
-        const { output } = await findBestRoute(inputAmount, token0.address, token1.address, pools, publicClient)
+        const { output } = await findBestRoute(
+          inputAmount,
+          token0.address,
+          token1.address,
+          pools,
+          publicClient,
+          SLIPPAGE
+        )
 
         const formattedOutput = formatTokenBalance(output, token1.decimals)
 
@@ -100,7 +104,14 @@ export function Swap() {
 
         const inputAmount = parseUnits(value, token1.decimals)
 
-        const { output } = await findBestRoute(inputAmount, token1.address, token0.address, pools, publicClient)
+        const { output } = await findBestRoute(
+          inputAmount,
+          token1.address,
+          token0.address,
+          pools,
+          publicClient,
+          SLIPPAGE
+        )
 
         const formattedOutput = formatTokenBalance(output, token0.decimals)
 
@@ -123,8 +134,8 @@ export function Swap() {
 
   return (
     <Box
-      width={{ base: '340px', lg: '450px' }}
-      height={{ base: '450px', lg: '550px' }}
+      width={{ base: '330px', lg: '430px' }}
+      height="475px"
       boxShadow="md"
       borderRadius="25px"
       mb="80px"
@@ -133,7 +144,7 @@ export function Swap() {
       bgImage={colorMode === 'dark' ? 'linear-gradient(#070E2B, #132E7F)' : 'linear-gradient(#142E78, #4762B9)'}
     >
       <VStack width="full" height="full" px="30px">
-        <HStack justifyContent="end" width="full" py="10">
+        <HStack justifyContent="end" width="full" py="3">
           <IconButton variant="ghost" color="white" _hover={{ background: 'none' }}>
             <GearIcon />
           </IconButton>
@@ -168,14 +179,13 @@ export function Swap() {
           tokenAddress={token1.address}
           tokenSymbol={token1.symbol}
           onInputValueChange={handleToken1InputChange}
-          onMaxClick={handleToken1MaxClick}
           onTokenSelectorClick={() => handleTokenSelectorOpen('to')}
           inputValue={token1Value}
           loading={loadingToken1Value}
         />
 
         <SubmitButton
-          mt="30px"
+          mt="15px"
           text="Trade"
           loading={false}
           onClickHandler={() => console.log('here')}
