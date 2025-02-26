@@ -1,5 +1,5 @@
 import { Header, Sidebar } from '@/components'
-import { HEADER_HEIGHT, SIDEBAR_WIDTH } from '@/constants'
+import {} from '@/constants'
 import { StateProvider, ThemeProvider, WalletProvider } from '@/providers'
 import { Box } from '@chakra-ui/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
@@ -67,18 +67,20 @@ export default function RootLayout({
         <ThemeProvider>
           <WalletProvider>
             <StateProvider>
-              <Header />
-              <Sidebar />
-              <Box
-                background="background"
-                position="absolute"
-                top={HEADER_HEIGHT}
-                maxHeight={`calc(100vh - ${HEADER_HEIGHT})`}
-                w={{ base: 'full', lg: `calc(100vw - ${SIDEBAR_WIDTH}) ` }}
-                ml={{ base: '0', lg: SIDEBAR_WIDTH }}
-              >
-                {children}
-              </Box>
+              <main>
+                <Header />
+                <Sidebar />
+                <Box
+                  background="background"
+                  position="absolute"
+                  top="80px"
+                  h="calc(100vh - 80px)"
+                  width={{ base: 'full', lg: 'calc(100vw - 300px)' }}
+                  ml={{ base: '0', lg: '300px' }}
+                >
+                  {children}
+                </Box>
+              </main>
             </StateProvider>
           </WalletProvider>
         </ThemeProvider>
