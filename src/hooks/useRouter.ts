@@ -1,11 +1,12 @@
 import { WAGMI_CONFIG } from '@/providers'
 import type { IPairData, IPairTokenData } from '@/services'
 import { ROUTER_ABI, ROUTER_ADDRESS } from '@/utils'
-import { type Account, type WalletClient, parseUnits } from 'viem'
+import { type Account, type PublicClient, type WalletClient, parseUnits } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 
 interface ITayaSwapRouter {
   calculateLiquidityCounterAmount: (inputAmount: bigint, inputToken: string, pool: IPairData) => bigint
+  calculateTradeOutput: (inputAmount: bigint, path: string[], client: PublicClient) => Promise<bigint>
   removeLiquidityWithPermit: (
     token0: IPairTokenData,
     token1: IPairTokenData,
@@ -31,7 +32,6 @@ interface ITayaSwapRouter {
     s: string,
     deadline: bigint
   ) => Promise<void>
-  calculateTradeOutput: (inputAmount: bigint, inputToken: string, pool: IPairData, slippage: number) => bigint
   addLiquidity: (
     token0: IPairTokenData,
     token1: IPairTokenData,
@@ -152,33 +152,19 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
   }
 
-  const calculateTradeOutput = (inputAmount: bigint, inputToken: string, pool: IPairData, slippage: number): bigint => {
+  async function calculateTradeOutput(inputAmount: bigint, path: string[], client: PublicClient): Promise<bigint> {
     if (inputAmount === 0n) return 0n
 
-    let reserveIn: bigint
-    let reserveOut: bigint
+    const amounts = await client.readContract({
+      address: ROUTER_ADDRESS,
+      abi: ROUTER_ABI,
+      functionName: 'getAmountsOut',
+      args: [inputAmount, path]
+    })
 
-    if (inputToken === pool.token0.id) {
-      reserveIn = parseUnits(pool.reserve0, Number(pool.token0.decimals))
-      reserveOut = parseUnits(pool.reserve1, Number(pool.token1.decimals))
-    } else if (inputToken === pool.token1.id) {
-      reserveIn = parseUnits(pool.reserve1, Number(pool.token1.decimals))
-      reserveOut = parseUnits(pool.reserve0, Number(pool.token0.decimals))
-    } else {
-      throw new Error('Input token is not part of this pool')
-    }
+    const length = (amounts as bigint[]).length
 
-    const feeMultiplier = 997n
-    const feeDenom = 1000n
-
-    const inputWithFee = inputAmount * feeMultiplier
-    const numerator = inputWithFee * reserveOut
-    const denominator = reserveIn * feeDenom + inputWithFee
-    const amountOut = numerator / denominator
-
-    const minAmountOut = (amountOut * BigInt(100 - slippage)) / 100n
-
-    return minAmountOut
+    return (amounts as bigint[])[length - 1]
   }
 
   const addLiquidity = async (

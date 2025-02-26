@@ -3,7 +3,7 @@
 import { useColorMode, useTayaSwapRouter } from '@/hooks'
 import { usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
-import { formatTokenBalance } from '@/utils'
+import { WETH_ADDRESS, formatTokenBalance } from '@/utils'
 import { Box, HStack, IconButton, VStack } from '@chakra-ui/react'
 import { useCallback, useMemo, useState } from 'react'
 import { parseUnits } from 'viem'
@@ -67,7 +67,7 @@ export function Swap() {
     handleToken1InputChange(max)
   }, [getFormattedTokenBalance, token1.address])
 
-  const pool = useMemo(() => {
+  const directPool = useMemo(() => {
     if (!pools) return null
     return (
       pools.find(
@@ -79,46 +79,29 @@ export function Swap() {
   }, [pools, token0.address, token1.address])
 
   const handleToken0InputChange = useCallback(
-    (value: string) => {
+    async (value: string) => {
       setLoadingToken0Value(true)
       setToken0Value(value)
       try {
         const inputAmount = parseUnits(value, token0.decimals)
-        if (pool) {
-          const outputAmount = calculateTradeOutput(inputAmount, token0.address, pool, SLIPPAGE)
-          const formattedOutput = formatTokenBalance(outputAmount, token1.decimals)
-          setToken1Value(formattedOutput)
-        } else {
-          setToken1Value('0')
-        }
+        let outputAmount: bigint
+        const path =
+          token0.address === WETH_ADDRESS || token1.address === WETH_ADDRESS
+            ? [token0.address, token1.address]
+            : [token0.address, WETH_ADDRESS, token1.address]
+        const publicClient = (await import('wagmi')).usePublicClient() // adjust as needed
+        outputAmount = await calculateTradeOutputForRoute(inputAmount, path, publicClient)
+        const formattedOutput = formatTokenBalance(outputAmount, token1.decimals)
+        setToken1Value(formattedOutput)
       } catch (error) {
         console.error('Error calculating trade output for token0:', error)
       }
       setLoadingToken0Value(false)
     },
-    [token0, token1, pool, calculateTradeOutput]
+    [token0, token1, directPool, calculateTradeOutput, calculateTradeOutputForRoute]
   )
 
-  const handleToken1InputChange = useCallback(
-    (value: string) => {
-      setLoadingToken1Value(true)
-      setToken1Value(value)
-      try {
-        const inputAmount = parseUnits(value, token1.decimals)
-        if (pool) {
-          const outputAmount = calculateTradeOutput(inputAmount, token1.address, pool, SLIPPAGE)
-          const formattedOutput = formatTokenBalance(outputAmount, token0.decimals)
-          setToken0Value(formattedOutput)
-        } else {
-          setToken0Value('0')
-        }
-      } catch (error) {
-        console.error('Error calculating trade output for token1:', error)
-      }
-      setLoadingToken1Value(false)
-    },
-    [token0, token1, pool, calculateTradeOutput]
-  )
+  const handleToken1InputChange = () => {}
 
   const handleSwapClick = () => {
     setToken0(token1)
