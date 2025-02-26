@@ -1,7 +1,7 @@
 'use client'
 
 import { useTokenBalancesStore } from '@/stores'
-import { Box, HStack, Text, VStack } from '@chakra-ui/react'
+import { Box, HStack, Spinner, Text, VStack } from '@chakra-ui/react'
 import { ActionButton, TokenSelectorButton } from '../Buttons'
 import { SwapTokenAmountInput } from '../Input'
 
@@ -46,7 +46,7 @@ export function SwapToken({
         <SwapTokenAmountInput loading={loading} onChangeHandler={onInputValueChange} inputValue={inputValue} />
         <HStack justifyContent="space-between" width="full" alignItems="center">
           <Text fontWeight="400" fontSize="14px">
-            {max}
+            {max ? max : <Spinner />}
           </Text>
           {direction === 'from' && onMaxClick && (
             <ActionButton

@@ -1,9 +1,10 @@
 'use client'
 
+import { ROUTER_ADDRESS, WETH_ADDRESS } from '@/constants'
 import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
 import type { IPairData, IPairTokenData } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
-import { ROUTER_ADDRESS, WETH_ADDRESS, formatTokenBalance } from '@/utils'
+import { formatTokenBalance } from '@/utils'
 import {
   Box,
   Button,
@@ -162,7 +163,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
   )
 
   const getFormattedBalance = useCallback(
-    (tokenAddress: string): string => {
+    (tokenAddress: string): string | undefined => {
       return tokenAddress === WETH_ADDRESS
         ? getFormattedTokenBalance(zeroAddress)
         : getFormattedTokenBalance(tokenAddress)

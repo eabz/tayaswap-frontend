@@ -1,6 +1,6 @@
 'use client'
 
-import { findBestRoute, useColorMode } from '@/hooks'
+import { findBestRoute, useColorMode, useERC20Token } from '@/hooks'
 import { usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
@@ -51,6 +51,8 @@ export function Swap() {
   const [tokenSelectorDirection, setTokenSelectorDirection] = useState<'from' | 'to' | undefined>(undefined)
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
 
+  const { approved, approve } = useERC20Token()
+
   const handleTokenSelectorOpen = useCallback((direction: 'from' | 'to') => {
     setTokenSelectorDirection(direction)
     setTokenSelectorOpen(true)
@@ -62,6 +64,7 @@ export function Swap() {
     if (!getFormattedTokenBalance || !pools || !publicClient) return
 
     const max = getFormattedTokenBalance(token0.address)
+    if (!max) return
 
     handleToken0InputChange(max)
   }, [getFormattedTokenBalance, token0.address, pools, publicClient])
@@ -135,11 +138,10 @@ export function Swap() {
 
   return (
     <Box
-      width={{ base: '330px', lg: '430px' }}
+      width={{ base: '350px', lg: '430px' }}
       height="475px"
       boxShadow="md"
       borderRadius="25px"
-      mb="80px"
       border="2px solid"
       borderColor="swap-border"
       bgImage={colorMode === 'dark' ? 'linear-gradient(#070E2B, #132E7F)' : 'linear-gradient(#142E78, #4762B9)'}

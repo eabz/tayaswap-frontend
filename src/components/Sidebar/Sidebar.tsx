@@ -1,5 +1,6 @@
 'use client'
 
+import { SIDEBAR_WIDTH } from '@/constants'
 import { useMobile } from '@/hooks'
 import { useSidebarStore } from '@/stores'
 import {
@@ -98,7 +99,7 @@ export function Sidebar() {
   }, [pathname, setOpen])
 
   return (
-    <Box h="100vh" width="300px">
+    <Box h="100vh" width={SIDEBAR_WIDTH}>
       <DrawerRoot open={mobile ? open : true} placement="start" modal={false}>
         <DrawerContent
           background="menu-bg"

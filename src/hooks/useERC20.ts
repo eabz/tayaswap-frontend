@@ -1,5 +1,6 @@
+import { ROUTER_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
-import { ERC20_ABI, ROUTER_ADDRESS } from '@/utils'
+import { ERC20_ABI } from '@/utils'
 import type { Account, PublicClient, WalletClient } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 

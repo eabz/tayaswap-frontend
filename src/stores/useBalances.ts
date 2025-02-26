@@ -14,8 +14,8 @@ interface ITokenBalancesStore {
   reloadTokenBalances: (owner: string, tokens: { address: string; decimals: number }[]) => Promise<void>
   reloadPoolBalances: (owner: string, tokens: { address: string; decimals: number }[]) => Promise<void>
   updateTokenBalance: (address: string, balance: bigint, decimals: number) => void
-  getFormattedTokenBalance: (address: string) => string
-  getFormattedPoolBalance: (address: string) => string
+  getFormattedTokenBalance: (address: string) => string | undefined
+  getFormattedPoolBalance: (address: string) => string | undefined
 }
 
 function reload(
@@ -44,13 +44,13 @@ export const useTokenBalancesStore = create<ITokenBalancesStore>((set, get) => (
     })),
   getFormattedTokenBalance: (address: string) => {
     const tokenBalance = get().tokenBalances[address]
-    if (!tokenBalance) return '0'
+    if (!tokenBalance) return undefined
 
     return formatTokenBalance(tokenBalance.balance, tokenBalance.decimals)
   },
   getFormattedPoolBalance: (address: string) => {
     const balance = get().poolBalances[address]
-    if (!balance) return '0'
+    if (!balance) return undefined
 
     return formatTokenBalance(balance.balance, balance.decimals)
   }

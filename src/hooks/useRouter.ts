@@ -1,6 +1,7 @@
+import { ROUTER_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
 import type { IPairData, IPairTokenData } from '@/services'
-import { ROUTER_ABI, ROUTER_ADDRESS } from '@/utils'
+import { ROUTER_ABI } from '@/utils'
 import { type Account, type PublicClient, type WalletClient, parseUnits } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 
