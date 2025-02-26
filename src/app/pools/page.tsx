@@ -2,9 +2,9 @@
 
 import { ActionButton, Input, ManagePoolModal, PlusOutlineIcon, SearchIcon, Table, TokenIconGroup } from '@/components'
 import { CreatePoolsModal } from '@/components/Modals/CreatePool'
+import { WETH_ADDRESS } from '@/constants'
 import { type IPairData, usePools } from '@/services'
 import { useTokenBalancesStore, useTokenListStore } from '@/stores'
-import { WETH_ADDRESS } from '@/utils'
 import { Box, Button, ButtonGroup, GridItem, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table'
 import { matchSorter } from 'match-sorter'
@@ -217,7 +217,7 @@ export default function Page() {
   }
 
   return (
-    <Box pt="15px" mx={{ base: '0', md: '20px', xl: '100px' }}>
+    <Box mx={{ base: '15px', md: '20px', xl: '100px' }}>
       <CreatePoolsModal open={createPoolOpen} close={() => setCreatePoolOpen(false)} onClose={handleCreatePoolsClose} />
       {managePool && (
         <ManagePoolModal

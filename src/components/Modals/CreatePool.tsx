@@ -51,7 +51,7 @@ export function CreatePoolsModal({ open, close, onClose }: ICreatePoolModalProps
   const [newPool, setNewPool] = useState<string | undefined>(undefined)
 
   return (
-    <Box position="absolute" width={{ base: 'full', lg: 'calc(100vw - 600px)' }} px="5" height="100vh">
+    <Box position="absolute" width={{ base: 'full', lg: 'calc(100vw - 600px)' }} px="5">
       <Center height="calc(100vh - 400px)">
         <DialogRoot open={open} size="xs" motionPreset="scale" onExitComplete={() => onClose(token0, token1, newPool)}>
           <DialogBackdrop />
@@ -80,7 +80,7 @@ export function CreatePoolsModal({ open, close, onClose }: ICreatePoolModalProps
               </HStack>
             </DialogHeader>
             <DialogBody>
-              <Box height="250px" position="relative" overflow="hidden">
+              <Box height="250px" position="relative">
                 <AnimatePresence initial={false} custom={1}>
                   {view === View.Pairs && (
                     <motion.div

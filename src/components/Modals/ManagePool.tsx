@@ -702,7 +702,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
   )
 
   return (
-    <Box position="absolute" width={{ base: 'full', lg: 'calc(100vw - 600px)' }} px="5" height="100vh">
+    <Box position="absolute" width={{ base: 'full', lg: 'calc(100vw - 600px)' }} px="5">
       <Center height="calc(100vh - 400px)">
         <DialogRoot open={open} size="xs" motionPreset="scale" onExitComplete={onClose}>
           <DialogBackdrop />
@@ -744,7 +744,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
               </HStack>
             </DialogHeader>
             <DialogBody>
-              <Box height="400px" position="relative" overflow="hidden">
+              <Box height="400px" position="relative" >
                 <AnimatePresence initial={false} custom={direction}>
                   {view === View.Selector && (
                     <SelectActionView direction={direction} changeView={changeView} pool={pool} close={close} />

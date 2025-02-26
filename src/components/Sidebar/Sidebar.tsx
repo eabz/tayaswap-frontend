@@ -99,7 +99,7 @@ export function Sidebar() {
   }, [pathname, setOpen])
 
   return (
-    <Box h="100vh" width={SIDEBAR_WIDTH}>
+    <Box h="100vh" width={SIDEBAR_WIDTH} position="absolute" top="0">
       <DrawerRoot open={mobile ? open : true} placement="start" modal={false}>
         <DrawerContent
           background="menu-bg"

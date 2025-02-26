@@ -1,5 +1,5 @@
-import { Header, Sidebar } from '@/components'
-import {} from '@/constants'
+import { Header } from '@/components'
+import { HEADER_HEIGHT, SIDEBAR_WIDTH } from '@/constants'
 import { StateProvider, ThemeProvider, WalletProvider } from '@/providers'
 import { Box } from '@chakra-ui/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
@@ -51,11 +51,7 @@ export const METADATA: Metadata = {
   }
 }
 
-export default function RootLayout({
-  children
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
@@ -63,20 +59,19 @@ export default function RootLayout({
       className={`${GEIST_SANS.variable} ${GEIST_MONO.variable} ${INTER.variable} ${NUNITO.variable} antialiased`}
     >
       <body>
-        <GoogleAnalytics gaId={'G-NS2ZG22J02'} />
+        <GoogleAnalytics gaId="G-NS2ZG22J02" />
         <ThemeProvider>
           <WalletProvider>
             <StateProvider>
-              <main>
+              <main style={{ position: 'relative', overflowX: 'hidden' }}>
                 <Header />
-                <Sidebar />
+                {/* <Sidebar /> */}
                 <Box
                   background="background"
-                  position="absolute"
-                  top="80px"
-                  h="calc(100vh - 80px)"
-                  width={{ base: 'full', lg: 'calc(100vw - 300px)' }}
-                  ml={{ base: '0', lg: '300px' }}
+                  ml={{ base: 0, lg: SIDEBAR_WIDTH }}
+                  w={{ base: '100%', lg: `calc(100vw - ${SIDEBAR_WIDTH})` }}
+                  height={`calc(100vh - ${HEADER_HEIGHT})`}
+                  pt="15px"
                 >
                   {children}
                 </Box>

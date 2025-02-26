@@ -3,31 +3,33 @@
 import { HEADER_HEIGHT } from '@/constants'
 import { useMobile } from '@/hooks'
 import { useSidebarStore } from '@/stores'
-import { Flex, HStack, IconButton } from '@chakra-ui/react'
+import { Flex, IconButton } from '@chakra-ui/react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { MenuIcon } from '../Icons'
 
 export function Header() {
   const { mobile } = useMobile()
-
   const { open, setOpen } = useSidebarStore()
 
   return (
     <Flex
+      as="header"
       align="center"
-      justify="space-between"
-      width="100%"
-      height={HEADER_HEIGHT}
-      position="absolute"
-      top="0"
+      justify={mobile ? 'space-between' : 'end'}
+      h={HEADER_HEIGHT}
+      px={mobile ? 4 : 8}
       bg="menu-bg"
+      w="100%"
+      position="sticky"
+      top="0"
+      zIndex="1000"
     >
-      <HStack width="full" justifyContent={mobile ? 'space-between' : 'end'} px={mobile ? 5 : 20}>
-        <IconButton onClick={() => setOpen(!open)} variant="ghost" size="xs" hideFrom="lg">
+      {mobile && (
+        <IconButton aria-label="Toggle Sidebar" onClick={() => setOpen(!open)} variant="ghost" size="xs">
           <MenuIcon />
         </IconButton>
-        <ConnectButton />
-      </HStack>
+      )}
+      <ConnectButton />
     </Flex>
   )
 }
