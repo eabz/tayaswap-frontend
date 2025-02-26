@@ -42,10 +42,10 @@ export function Swap() {
 
   const [token0, setToken0] = useState(DEFAULT_INITIAL_TOKEN_0)
   const [loadingToken0Value, setLoadingToken0Value] = useState(false)
-  const [token0Value, setToken0Value] = useState('1')
+  const [token0Value, setToken0Value] = useState('0')
 
   const [token1, setToken1] = useState(DEFAULT_INITIAL_TOKEN_1)
-  const [loadingToken1Value, setLoadingToken1Value] = useState(true)
+  const [loadingToken1Value, setLoadingToken1Value] = useState(false)
   const [token1Value, setToken1Value] = useState('0')
 
   const [tokenSelectorDirection, setTokenSelectorDirection] = useState<'from' | 'to' | undefined>(undefined)
@@ -73,26 +73,19 @@ export function Swap() {
       setLoadingToken1Value(true)
       setToken0Value(value)
       try {
+        if (!pools || !publicClient) return
+
         const inputAmount = parseUnits(value, token0.decimals)
 
-        if (pools && publicClient) {
-          const { route, output } = await findBestRoute(
-            inputAmount,
-            token0.address,
-            token1.address,
-            pools,
-            publicClient
-          )
+        const { output } = await findBestRoute(inputAmount, token0.address, token1.address, pools, publicClient)
 
-          const formattedOutput = formatTokenBalance(output, token1.decimals)
-          setToken1Value(formattedOutput)
-        } else {
-          setToken1Value('0')
-        }
+        const formattedOutput = formatTokenBalance(output, token1.decimals)
+
+        setToken1Value(formattedOutput)
       } catch (error) {
-        console.log(error)
         console.error('Error calculating trade output for token0:', error)
       }
+
       setLoadingToken1Value(false)
     },
     [token0, token1, pools, publicClient]
@@ -103,23 +96,19 @@ export function Swap() {
       setLoadingToken0Value(true)
       setToken1Value(value)
       try {
+        if (!pools || !publicClient) return
+
         const inputAmount = parseUnits(value, token1.decimals)
-        if (pools && publicClient) {
-          const { route, output } = await findBestRoute(
-            inputAmount,
-            token1.address,
-            token0.address,
-            pools,
-            publicClient
-          )
-          const formattedOutput = formatTokenBalance(output, token0.decimals)
-          setToken0Value(formattedOutput)
-        } else {
-          setToken0Value('0')
-        }
+
+        const { output } = await findBestRoute(inputAmount, token1.address, token0.address, pools, publicClient)
+
+        const formattedOutput = formatTokenBalance(output, token0.decimals)
+
+        setToken0Value(formattedOutput)
       } catch (error) {
         console.error('Error calculating trade output for token1:', error)
       }
+
       setLoadingToken0Value(false)
     },
     [token0, token1, pools, publicClient]

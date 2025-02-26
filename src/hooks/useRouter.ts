@@ -60,14 +60,21 @@ export async function findBestRoute(
   pools: IPairData[],
   client: PublicClient
 ): Promise<{ route: string[]; output: bigint }> {
-  const existsPool = (tokenA: string, tokenB: string): boolean =>
-    pools.some(
-      (p) =>
+  function existsPool(tokenA: string, tokenB: string): boolean {
+    for (let i = 0; i < pools.length; i++) {
+      const p = pools[i]
+      if (
         (p.token0.id.toLowerCase() === tokenA.toLowerCase() && p.token1.id.toLowerCase() === tokenB.toLowerCase()) ||
         (p.token0.id.toLowerCase() === tokenB.toLowerCase() && p.token1.id.toLowerCase() === tokenA.toLowerCase())
-    )
+      ) {
+        return true
+      }
+    }
+    return false
+  }
 
   const routes: string[][] = []
+
   if (existsPool(tokenIn, tokenOut)) {
     routes.push([tokenIn, tokenOut])
   }
@@ -79,12 +86,10 @@ export async function findBestRoute(
   }
   candidateSet.delete(tokenIn)
   candidateSet.delete(tokenOut)
-
   const candidates = Array.from(candidateSet)
 
   for (let i = 0; i < candidates.length; i++) {
     const x = candidates[i]
-
     if (existsPool(tokenIn, x) && existsPool(x, tokenOut)) {
       routes.push([tokenIn, x, tokenOut])
     }
@@ -97,7 +102,6 @@ export async function findBestRoute(
       if (existsPool(tokenIn, x) && existsPool(x, y) && existsPool(y, tokenOut)) {
         routes.push([tokenIn, x, y, tokenOut])
       }
-      // Also try the alternate ordering:
       if (existsPool(tokenIn, y) && existsPool(y, x) && existsPool(x, tokenOut)) {
         routes.push([tokenIn, y, x, tokenOut])
       }
@@ -106,8 +110,8 @@ export async function findBestRoute(
 
   let bestRoute: string[] = []
   let bestOutput = 0n
-
-  for (const route of routes) {
+  for (let i = 0; i < routes.length; i++) {
+    const route = routes[i]
     try {
       const amounts: bigint[] = (await client.readContract({
         address: ROUTER_ADDRESS,
@@ -121,8 +125,8 @@ export async function findBestRoute(
         bestOutput = output
         bestRoute = route
       }
-    } catch (e) {
-      console.error('Error evaluating route', route, e)
+    } catch (error) {
+      console.error('Error evaluating route', route, error)
     }
   }
 
