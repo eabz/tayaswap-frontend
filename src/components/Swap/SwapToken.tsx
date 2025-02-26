@@ -2,7 +2,6 @@
 
 import { useTokenBalancesStore } from '@/stores'
 import { Box, HStack, Text, VStack } from '@chakra-ui/react'
-import { useMemo } from 'react'
 import { ActionButton, TokenSelectorButton } from '../Buttons'
 import { SwapTokenAmountInput } from '../Input'
 
@@ -29,7 +28,7 @@ export function SwapToken({
 }: ISwapTokenProps) {
   const { getFormattedTokenBalance } = useTokenBalancesStore()
 
-  const max = useMemo(() => getFormattedTokenBalance(tokenAddress), [tokenAddress, getFormattedTokenBalance])
+  const max = getFormattedTokenBalance(tokenAddress)
 
   return (
     <Box width="full">

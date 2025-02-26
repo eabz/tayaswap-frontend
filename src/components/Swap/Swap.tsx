@@ -1,26 +1,25 @@
 'use client'
 
-import { useColorMode, useTayaSwapRouter } from '@/hooks'
+import { findBestRoute, useColorMode, useTayaSwapRouter } from '@/hooks'
 import { usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
-import { WETH_ADDRESS, formatTokenBalance } from '@/utils'
+import { formatTokenBalance } from '@/utils'
 import { Box, HStack, IconButton, VStack } from '@chakra-ui/react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { parseUnits } from 'viem'
+import { usePublicClient } from 'wagmi'
 import { SubmitButton } from '../Buttons'
 import { GearIcon } from '../Icons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
 import { SwapToken } from './SwapToken'
 
-const SLIPPAGE = 1
-
 const DEFAULT_INITIAL_TOKEN_0 = {
-  address: '0x0000000000000000000000000000000000000000',
+  address: '0x760afe86e5de5fa0ee542fc7b7b713e1c5425701',
   chainId: 10143,
-  name: 'Monad Testnet',
-  symbol: 'TMON',
+  name: 'Wrapped Monad',
+  symbol: 'WMON',
   decimals: 18,
-  logoURI: 'https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/mon.png'
+  logoURI: 'https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/wmon.jpg'
 }
 
 const DEFAULT_INITIAL_TOKEN_1 = {
@@ -38,6 +37,8 @@ export function Swap() {
   const { calculateTradeOutput } = useTayaSwapRouter()
 
   const { data: pools } = usePools()
+
+  const publicClient = usePublicClient()
 
   const [token0, setToken0] = useState(DEFAULT_INITIAL_TOKEN_0)
   const [loadingToken0Value, setLoadingToken0Value] = useState(false)
@@ -67,41 +68,62 @@ export function Swap() {
     handleToken1InputChange(max)
   }, [getFormattedTokenBalance, token1.address])
 
-  const directPool = useMemo(() => {
-    if (!pools) return null
-    return (
-      pools.find(
-        (p) =>
-          (p.token0.id === token0.address && p.token1.id === token1.address) ||
-          (p.token0.id === token1.address && p.token1.id === token0.address)
-      ) || null
-    )
-  }, [pools, token0.address, token1.address])
-
   const handleToken0InputChange = useCallback(
     async (value: string) => {
-      setLoadingToken0Value(true)
+      setLoadingToken1Value(true)
       setToken0Value(value)
       try {
         const inputAmount = parseUnits(value, token0.decimals)
-        let outputAmount: bigint
-        const path =
-          token0.address === WETH_ADDRESS || token1.address === WETH_ADDRESS
-            ? [token0.address, token1.address]
-            : [token0.address, WETH_ADDRESS, token1.address]
-        const publicClient = (await import('wagmi')).usePublicClient() // adjust as needed
-        outputAmount = await calculateTradeOutputForRoute(inputAmount, path, publicClient)
-        const formattedOutput = formatTokenBalance(outputAmount, token1.decimals)
-        setToken1Value(formattedOutput)
+
+        if (pools && publicClient) {
+          const { route, output } = await findBestRoute(
+            inputAmount,
+            token0.address,
+            token1.address,
+            pools,
+            publicClient
+          )
+
+          const formattedOutput = formatTokenBalance(output, token1.decimals)
+          setToken1Value(formattedOutput)
+        } else {
+          setToken1Value('0')
+        }
       } catch (error) {
+        console.log(error)
         console.error('Error calculating trade output for token0:', error)
+      }
+      setLoadingToken1Value(false)
+    },
+    [token0, token1, pools, publicClient]
+  )
+
+  const handleToken1InputChange = useCallback(
+    async (value: string) => {
+      setLoadingToken0Value(true)
+      setToken1Value(value)
+      try {
+        const inputAmount = parseUnits(value, token1.decimals)
+        if (pools && publicClient) {
+          const { route, output } = await findBestRoute(
+            inputAmount,
+            token1.address,
+            token0.address,
+            pools,
+            publicClient
+          )
+          const formattedOutput = formatTokenBalance(output, token0.decimals)
+          setToken0Value(formattedOutput)
+        } else {
+          setToken0Value('0')
+        }
+      } catch (error) {
+        console.error('Error calculating trade output for token1:', error)
       }
       setLoadingToken0Value(false)
     },
-    [token0, token1, directPool, calculateTradeOutput, calculateTradeOutputForRoute]
+    [token0, token1, pools, publicClient]
   )
-
-  const handleToken1InputChange = () => {}
 
   const handleSwapClick = () => {
     setToken0(token1)

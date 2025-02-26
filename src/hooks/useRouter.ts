@@ -53,6 +53,82 @@ interface ITayaSwapRouter {
   ) => Promise<void>
 }
 
+export async function findBestRoute(
+  inputAmount: bigint,
+  tokenIn: string,
+  tokenOut: string,
+  pools: IPairData[],
+  client: PublicClient
+): Promise<{ route: string[]; output: bigint }> {
+  const existsPool = (tokenA: string, tokenB: string): boolean =>
+    pools.some(
+      (p) =>
+        (p.token0.id.toLowerCase() === tokenA.toLowerCase() && p.token1.id.toLowerCase() === tokenB.toLowerCase()) ||
+        (p.token0.id.toLowerCase() === tokenB.toLowerCase() && p.token1.id.toLowerCase() === tokenA.toLowerCase())
+    )
+
+  const routes: string[][] = []
+  if (existsPool(tokenIn, tokenOut)) {
+    routes.push([tokenIn, tokenOut])
+  }
+
+  const candidateSet = new Set<string>()
+  for (let i = 0; i < pools.length; i++) {
+    candidateSet.add(pools[i].token0.id)
+    candidateSet.add(pools[i].token1.id)
+  }
+  candidateSet.delete(tokenIn)
+  candidateSet.delete(tokenOut)
+
+  const candidates = Array.from(candidateSet)
+
+  for (let i = 0; i < candidates.length; i++) {
+    const x = candidates[i]
+
+    if (existsPool(tokenIn, x) && existsPool(x, tokenOut)) {
+      routes.push([tokenIn, x, tokenOut])
+    }
+  }
+
+  for (let i = 0; i < candidates.length; i++) {
+    for (let j = i + 1; j < candidates.length; j++) {
+      const x = candidates[i]
+      const y = candidates[j]
+      if (existsPool(tokenIn, x) && existsPool(x, y) && existsPool(y, tokenOut)) {
+        routes.push([tokenIn, x, y, tokenOut])
+      }
+      // Also try the alternate ordering:
+      if (existsPool(tokenIn, y) && existsPool(y, x) && existsPool(x, tokenOut)) {
+        routes.push([tokenIn, y, x, tokenOut])
+      }
+    }
+  }
+
+  let bestRoute: string[] = []
+  let bestOutput = 0n
+
+  for (const route of routes) {
+    try {
+      const amounts: bigint[] = (await client.readContract({
+        address: ROUTER_ADDRESS,
+        abi: ROUTER_ABI,
+        functionName: 'getAmountsOut',
+        args: [inputAmount, route]
+      })) as bigint[]
+
+      const output = amounts[amounts.length - 1]
+      if (output > bestOutput) {
+        bestOutput = output
+        bestRoute = route
+      }
+    } catch (e) {
+      console.error('Error evaluating route', route, e)
+    }
+  }
+
+  return { route: bestRoute, output: bestOutput }
+}
+
 export function useTayaSwapRouter(): ITayaSwapRouter {
   const calculateLiquidityCounterAmount = (inputAmount: bigint, inputToken: string, pool: IPairData): bigint => {
     if (inputAmount === 0n) return 0n
@@ -155,16 +231,14 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
   async function calculateTradeOutput(inputAmount: bigint, path: string[], client: PublicClient): Promise<bigint> {
     if (inputAmount === 0n) return 0n
 
-    const amounts = await client.readContract({
+    const amounts = (await client.readContract({
       address: ROUTER_ADDRESS,
       abi: ROUTER_ABI,
       functionName: 'getAmountsOut',
       args: [inputAmount, path]
-    })
+    })) as bigint[]
 
-    const length = (amounts as bigint[]).length
-
-    return (amounts as bigint[])[length - 1]
+    return amounts[amounts.length - 1]
   }
 
   const addLiquidity = async (
