@@ -52,7 +52,7 @@ export function CreatePoolsModal({ open, close, onClose }: ICreatePoolModalProps
 
   return (
     <Box position="absolute" width={{ base: 'full', lg: 'calc(100vw - 600px)' }} px="5">
-      <Center height="calc(100vh - 400px)">
+      <Center height="calc(100dvh - 400px)">
         <DialogRoot open={open} size="xs" motionPreset="scale" onExitComplete={() => onClose(token0, token1, newPool)}>
           <DialogBackdrop />
           <DialogContent rounded="25px" background="modal-background" border="1px solid" borderColor="modal-border">

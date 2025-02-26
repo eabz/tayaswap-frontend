@@ -106,7 +106,8 @@ const CONFIG = defineConfig({
     body: {
       fontFamily: 'Nunito',
       color: 'text-color',
-      fontWeight: '600'
+      fontWeight: '600',
+      background: 'background'
     },
     '.swap-gradient': {
       backgroundImage: 'linear-gradient(#142E78 #4762B9, var(--tw-gradient-stops))'

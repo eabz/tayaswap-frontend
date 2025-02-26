@@ -99,11 +99,11 @@ export function Sidebar() {
   }, [pathname, setOpen])
 
   return (
-    <Box h="100vh" width={SIDEBAR_WIDTH} position="absolute" top="0">
+    <Box h="100dvh" width={SIDEBAR_WIDTH} position="absolute" top="0">
       <DrawerRoot open={mobile ? open : true} placement="start" modal={false}>
         <DrawerContent
           background="menu-bg"
-          h="100vh"
+          h="100dvh"
           boxShadow="none"
           _open={{ animation: mobile ? undefined : 'none' }}
         >

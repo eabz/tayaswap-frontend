@@ -1,14 +1,14 @@
 'use client'
 
 import { Swap } from '@/components'
-import { Box, HStack } from '@chakra-ui/react'
+import { Box, Center } from '@chakra-ui/react'
 
 export default function Page() {
   return (
-    <Box mx={{ base: '15px', md: '20px', xl: '100px' }}>
-      <HStack justifyContent="center" width="full">
+    <Box mx={{ base: '15px', md: '20px', xl: '100px' }} height="100%">
+      <Center width="100%" height="100%">
         <Swap />
-      </HStack>
+      </Center>
     </Box>
   )
 }

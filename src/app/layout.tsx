@@ -1,4 +1,4 @@
-import { Header } from '@/components'
+import { Header, Sidebar } from '@/components'
 import { HEADER_HEIGHT, SIDEBAR_WIDTH } from '@/constants'
 import { StateProvider, ThemeProvider, WalletProvider } from '@/providers'
 import { Box } from '@chakra-ui/react'
@@ -65,12 +65,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <StateProvider>
               <main style={{ position: 'relative', overflowX: 'hidden' }}>
                 <Header />
-                {/* <Sidebar /> */}
+                <Sidebar />
                 <Box
                   background="background"
                   ml={{ base: 0, lg: SIDEBAR_WIDTH }}
                   w={{ base: '100%', lg: `calc(100vw - ${SIDEBAR_WIDTH})` }}
-                  height={`calc(100vh - ${HEADER_HEIGHT})`}
+                  height={`calc(100dvh - ${HEADER_HEIGHT})`}
                   pt="15px"
                 >
                   {children}

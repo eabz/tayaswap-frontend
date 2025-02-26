@@ -52,7 +52,7 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
   const paginationText = totalPages > 0 ? `Page ${pageIndex + 1} of ${totalPages}` : ''
 
   return (
-    <Flex direction="column" align="start" maxWidth="100vw" width="100%" zIndex="40" my="5">
+    <Flex direction="column" align="start" maxWidth="100vw" width="100%" zIndex="40" py="5">
       <ChakraTable.ScrollArea
         roundedTop="25px"
         maxWidth="100vw"
@@ -137,6 +137,7 @@ export function Table<RowDataType extends TData>({ columns, data, loading }: ITa
         roundedBottom="25px"
         px={5}
         py={3}
+        mb="5"
       >
         <IconActionButton
           disabled={!table.getCanPreviousPage()}
