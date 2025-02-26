@@ -1,6 +1,6 @@
 'use client'
 
-import { findBestRoute, useColorMode, useTayaSwapRouter } from '@/hooks'
+import { findBestRoute, useColorMode } from '@/hooks'
 import { usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
@@ -36,8 +36,6 @@ const DEFAULT_INITIAL_TOKEN_1 = {
 export function Swap() {
   const { colorMode } = useColorMode()
 
-  const { calculateTradeOutput } = useTayaSwapRouter()
-
   const { data: pools } = usePools()
 
   const publicClient = usePublicClient()
@@ -60,10 +58,13 @@ export function Swap() {
 
   const { getFormattedTokenBalance } = useTokenBalancesStore()
 
-  const handleToken0MaxClick = () => {
+  const handleToken0MaxClick = useCallback(() => {
+    if (!getFormattedTokenBalance || !pools || !publicClient) return
+
     const max = getFormattedTokenBalance(token0.address)
+
     handleToken0InputChange(max)
-  }
+  }, [getFormattedTokenBalance, token0.address, pools, publicClient])
 
   const handleToken0InputChange = useCallback(
     async (value: string) => {
