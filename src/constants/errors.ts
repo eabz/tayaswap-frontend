@@ -22,3 +22,9 @@ export const ERROR_WITHDRAWAL = (poolBalance: string, token0: string, token1: st
   `Error withdrawing ${poolBalance} pool tokens for token0 ${token0} token1 ${token1} : ${err}`
 
 export const ERROR_SIGNATURE = (err: unknown) => `Signature error: ${err}`
+
+export const ERROR_ROUTE = (token0: string, token1: string) =>
+  `Error no valid route found for token0 ${token0} token1 ${token1}`
+
+export const ERROR_SWAP = (token0: string, token0Amount: string, token1: string, token1Amount: string, err: unknown) =>
+  `Error executing swap for token0 ${token0} amount ${token0Amount} token1 ${token1} amount ${token1Amount}: ${err}`

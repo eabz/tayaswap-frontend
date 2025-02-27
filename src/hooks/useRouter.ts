@@ -1,4 +1,4 @@
-import { ERROR_EVALUATING_ROUTE, ROUTER_ADDRESS } from '@/constants'
+import { ROUTER_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
 import type { IPairData, IPairTokenData } from '@/services'
 import { ROUTER_ABI } from '@/utils'
@@ -52,6 +52,30 @@ interface ITayaSwapRouter {
     client: WalletClient,
     deadline: bigint
   ) => Promise<void>
+  swapExactTokensForTokens: (
+    amountIn: bigint,
+    amountOutMin: bigint,
+    path: string[],
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint
+  ) => Promise<void>
+  swapExactETHForTokens: (
+    amountOutMin: bigint,
+    path: string[],
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint,
+    ethAmount: bigint
+  ) => Promise<void>
+  swapExactTokensForETH: (
+    amountIn: bigint,
+    amountOutMin: bigint,
+    path: string[],
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint
+  ) => Promise<void>
 }
 
 export async function findBestRoute(
@@ -59,7 +83,6 @@ export async function findBestRoute(
   tokenIn: string,
   tokenOut: string,
   pools: IPairData[],
-  client: PublicClient,
   slippage: number
 ): Promise<{ route: string[]; output: bigint }> {
   if (inputAmount === 0n) return { route: [], output: 0n }
@@ -90,6 +113,7 @@ export async function findBestRoute(
   }
   candidateSet.delete(tokenIn)
   candidateSet.delete(tokenOut)
+
   const candidates = Array.from(candidateSet)
 
   for (let i = 0; i < candidates.length; i++) {
@@ -112,28 +136,63 @@ export async function findBestRoute(
     }
   }
 
+  function getPool(tokenA: string, tokenB: string): IPairData | undefined {
+    return pools.find(
+      (p) =>
+        (p.token0.id.toLowerCase() === tokenA.toLowerCase() && p.token1.id.toLowerCase() === tokenB.toLowerCase()) ||
+        (p.token0.id.toLowerCase() === tokenB.toLowerCase() && p.token1.id.toLowerCase() === tokenA.toLowerCase())
+    )
+  }
+
+  function getAmountOutLocal(amountIn: bigint, reserveIn: bigint, reserveOut: bigint): bigint {
+    const amountInWithFee = amountIn * 997n
+
+    const numerator = amountInWithFee * reserveOut
+
+    const denominator = reserveIn * 1000n + amountInWithFee
+
+    return numerator / denominator
+  }
+
   let bestRoute: string[] = []
   let bestOutput = 0n
 
-  for (let i = 0; i < routes.length; i++) {
-    const route = routes[i]
+  for (const route of routes) {
+    let amount = inputAmount
 
-    try {
-      const amounts: bigint[] = (await client.readContract({
-        address: ROUTER_ADDRESS,
-        abi: ROUTER_ABI,
-        functionName: 'getAmountsOut',
-        args: [inputAmount, route]
-      })) as bigint[]
+    let valid = true
 
-      const output = amounts[amounts.length - 1]
+    for (let i = 0; i < route.length - 1; i++) {
+      const tokenA = route[i]
 
-      if (output > bestOutput) {
-        bestOutput = output
-        bestRoute = route
+      const tokenB = route[i + 1]
+
+      const pool = getPool(tokenA, tokenB)
+
+      if (!pool) {
+        valid = false
+        break
       }
-    } catch (err) {
-      console.error(ERROR_EVALUATING_ROUTE(route, err))
+
+      let reserveIn: bigint
+      let reserveOut: bigint
+
+      if (pool.token0.id.toLowerCase() === tokenA.toLowerCase()) {
+        reserveIn = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+        reserveOut = parseUnits(pool.reserve1, Number(pool.token1.decimals))
+      } else {
+        reserveIn = parseUnits(pool.reserve1, Number(pool.token1.decimals))
+        reserveOut = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+      }
+
+      amount = getAmountOutLocal(amount, reserveIn, reserveOut)
+    }
+
+    if (!valid) continue
+
+    if (amount > bestOutput) {
+      bestOutput = amount
+      bestRoute = route
     }
   }
 
@@ -304,12 +363,73 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
   }
 
+  const swapExactTokensForTokens = async (
+    amountIn: bigint,
+    amountOutMin: bigint,
+    path: string[],
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint
+  ): Promise<void> => {
+    const tx = await client.writeContract({
+      address: ROUTER_ADDRESS,
+      abi: ROUTER_ABI,
+      functionName: 'swapExactTokensForTokens',
+      args: [amountIn, amountOutMin, path, toAddress, deadline],
+      chain: client.chain,
+      account: client.account as Account
+    })
+    await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
+  }
+
+  const swapExactETHForTokens = async (
+    amountOutMin: bigint,
+    path: string[],
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint,
+    ethAmount: bigint
+  ): Promise<void> => {
+    const tx = await client.writeContract({
+      address: ROUTER_ADDRESS,
+      abi: ROUTER_ABI,
+      functionName: 'swapExactETHForTokens',
+      args: [amountOutMin, path, toAddress, deadline],
+      chain: client.chain,
+      account: client.account as Account,
+      value: ethAmount
+    })
+    await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
+  }
+
+  const swapExactTokensForETH = async (
+    amountIn: bigint,
+    amountOutMin: bigint,
+    path: string[],
+    toAddress: string,
+    client: WalletClient,
+    deadline: bigint
+  ): Promise<void> => {
+    const tx = await client.writeContract({
+      address: ROUTER_ADDRESS,
+      abi: ROUTER_ABI,
+      functionName: 'swapExactTokensForETH',
+      args: [amountIn, amountOutMin, path, toAddress, deadline],
+      chain: client.chain,
+      account: client.account as Account
+    })
+    await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
+  }
+
   return {
     calculateLiquidityCounterAmount,
     removeLiquidityWithPermit,
     removeLiquidityETHWithPermit,
     calculateTradeOutput,
     addLiquidity,
-    addLiquidityETH
+    addLiquidityETH,
+    swapExactTokensForTokens,
+    swapExactETHForTokens,
+    swapExactTokensForETH
   }
 }

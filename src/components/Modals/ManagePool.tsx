@@ -40,7 +40,7 @@ import { Slider } from '../Slider'
 import { TokenIconGroup } from '../TokenIcon'
 
 // TODO: Change to a global state
-const SLIPPAGE = 1
+const SLIPPAGE = 5
 
 enum View {
   Selector = 0,
@@ -571,6 +571,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     } catch (err) {
       console.error(ERROR_WITHDRAWAL(poolBalanceWithdraw.toString(), pool.token0.id, pool.token1.id, err))
     }
+
     setLoadingWithdrawal(false)
   }, [
     address,
