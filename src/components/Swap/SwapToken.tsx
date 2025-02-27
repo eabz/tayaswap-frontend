@@ -2,6 +2,7 @@
 
 import { useTokenBalancesStore } from '@/stores'
 import { Box, HStack, Spinner, Text, VStack } from '@chakra-ui/react'
+import { useAccount } from 'wagmi'
 import { ActionButton, TokenSelectorButton } from '../Buttons'
 import { SwapTokenAmountInput } from '../Input'
 
@@ -26,6 +27,8 @@ export function SwapToken({
   loading,
   inputValue
 }: ISwapTokenProps) {
+  const { address } = useAccount()
+
   const { getFormattedTokenBalance } = useTokenBalancesStore()
 
   const max = getFormattedTokenBalance(tokenAddress)
@@ -46,7 +49,7 @@ export function SwapToken({
         <SwapTokenAmountInput loading={loading} onChangeHandler={onInputValueChange} inputValue={inputValue} />
         <HStack justifyContent="space-between" width="full" alignItems="center">
           <Text fontWeight="400" fontSize="14px">
-            {max ? max : <Spinner />}
+            {address ? max ? max : <Spinner /> : '0'}
           </Text>
           {direction === 'from' && onMaxClick && (
             <ActionButton

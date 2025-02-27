@@ -1,7 +1,7 @@
-import { Input as ChakraInput, HStack, type InputProps, Spinner } from '@chakra-ui/react'
+import { Input as ChakraInput, HStack, Spinner } from '@chakra-ui/react'
 import type { JSX } from 'react'
 
-export interface ISwapTokenAmountInputProps extends InputProps {
+export interface ISwapTokenAmountInputProps {
   loading: boolean
   onChangeHandler: (value: string) => void
   inputValue: string

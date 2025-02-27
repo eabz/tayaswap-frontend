@@ -1,5 +1,6 @@
 'use client'
 
+import { ERROR_APPROVE, ERROR_CALCULATING_TRADE, WETH_ADDRESS } from '@/constants'
 import { findBestRoute, useColorMode, useERC20Token } from '@/hooks'
 import { usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
@@ -7,7 +8,7 @@ import { formatTokenBalance } from '@/utils'
 import { Box, HStack, IconButton, VStack } from '@chakra-ui/react'
 import { useCallback, useState } from 'react'
 import { parseUnits } from 'viem'
-import { usePublicClient } from 'wagmi'
+import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { SubmitButton } from '../Buttons'
 import { GearIcon } from '../Icons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
@@ -38,6 +39,10 @@ export function Swap() {
 
   const { data: pools } = usePools()
 
+  const { address } = useAccount()
+
+  const { data: walletClient } = useWalletClient()
+
   const publicClient = usePublicClient()
 
   const [token0, setToken0] = useState(DEFAULT_INITIAL_TOKEN_0)
@@ -52,6 +57,23 @@ export function Swap() {
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
 
   const { approved, approve } = useERC20Token()
+
+  const checkApproved = useCallback(
+    async (tokenAddress: string, inputAmount: bigint) => {
+      if (!address || !publicClient) return
+
+      if (tokenAddress !== WETH_ADDRESS) {
+        const isApproved = await approved(address, tokenAddress, inputAmount, publicClient)
+
+        setTokenApproved(isApproved)
+      } else {
+        setTokenApproved(true)
+      }
+    },
+    [address, approved, publicClient]
+  )
+
+  const [tokenApproved, setTokenApproved] = useState(true)
 
   const handleTokenSelectorOpen = useCallback((direction: 'from' | 'to') => {
     setTokenSelectorDirection(direction)
@@ -72,11 +94,15 @@ export function Swap() {
   const handleToken0InputChange = useCallback(
     async (value: string) => {
       setLoadingToken1Value(true)
+
       setToken0Value(value)
+
       try {
-        if (!pools || !publicClient) return
+        if (!pools || !publicClient || !address) return
 
         const inputAmount = parseUnits(value, token0.decimals)
+
+        await checkApproved(token0.address, inputAmount)
 
         const { output } = await findBestRoute(
           inputAmount,
@@ -90,13 +116,13 @@ export function Swap() {
         const formattedOutput = formatTokenBalance(output, token1.decimals)
 
         setToken1Value(formattedOutput)
-      } catch (error) {
-        console.error('Error calculating trade output for token0:', error)
+      } catch (err) {
+        console.error(ERROR_CALCULATING_TRADE(token0.address, token1.address, err))
       }
 
       setLoadingToken1Value(false)
     },
-    [token0, token1, pools, publicClient]
+    [token0, token1, pools, publicClient, address, checkApproved]
   )
 
   const handleToken1InputChange = useCallback(
@@ -120,8 +146,8 @@ export function Swap() {
         const formattedOutput = formatTokenBalance(output, token0.decimals)
 
         setToken0Value(formattedOutput)
-      } catch (error) {
-        console.error('Error calculating trade output for token1:', error)
+      } catch (err) {
+        console.error(ERROR_CALCULATING_TRADE(token0.address, token1.address, err))
       }
 
       setLoadingToken0Value(false)
@@ -129,12 +155,33 @@ export function Swap() {
     [token0, token1, pools, publicClient]
   )
 
-  const handleSwapClick = () => {
+  const handleSwapClick = useCallback(async () => {
+    if (!address || !publicClient) return
+
     setToken0(token1)
     setToken1(token0)
     setToken0Value(token1Value)
     setToken1Value(token0Value)
-  }
+
+    const inputAmount = parseUnits(token0Value, token0.decimals)
+
+    await checkApproved(token0.address, inputAmount)
+  }, [address, publicClient, checkApproved, token0, token1, token0Value, token1Value])
+
+  const handleApprove = useCallback(async () => {
+    if (!address || !walletClient) return
+
+    const inputAmount = parseUnits(token0Value, token0.decimals)
+    try {
+      await approve(token0.address, inputAmount, walletClient)
+
+      setTokenApproved(true)
+    } catch (err) {
+      console.error(ERROR_APPROVE(token0.address, inputAmount.toString(), err))
+    }
+  }, [address, walletClient, token0.address, token0Value, token0.decimals, approve])
+
+  const handleSwap = useCallback(() => {}, [])
 
   return (
     <Box
@@ -189,10 +236,10 @@ export function Swap() {
 
         <SubmitButton
           mt="15px"
-          text="Trade"
+          text={tokenApproved ? 'Trade' : 'Approve'}
           loading={false}
-          onClickHandler={() => console.log('here')}
-          disabled={false}
+          onClickHandler={tokenApproved ? handleSwap : handleApprove}
+          disabled={token0Value === '0' || token1Value === '0'}
           width="full"
         />
       </VStack>

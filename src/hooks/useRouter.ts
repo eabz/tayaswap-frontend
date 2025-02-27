@@ -1,4 +1,4 @@
-import { ROUTER_ADDRESS } from '@/constants'
+import { ERROR_EVALUATING_ROUTE, ROUTER_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
 import type { IPairData, IPairTokenData } from '@/services'
 import { ROUTER_ABI } from '@/utils'
@@ -127,12 +127,13 @@ export async function findBestRoute(
       })) as bigint[]
 
       const output = amounts[amounts.length - 1]
+
       if (output > bestOutput) {
         bestOutput = output
         bestRoute = route
       }
-    } catch (error) {
-      console.error('Error evaluating route', route, error)
+    } catch (err) {
+      console.error(ERROR_EVALUATING_ROUTE(route, err))
     }
   }
 

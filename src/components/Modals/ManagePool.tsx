@@ -1,6 +1,14 @@
 'use client'
 
-import { ROUTER_ADDRESS, WETH_ADDRESS } from '@/constants'
+import {
+  ERROR_APPROVE,
+  ERROR_CALCULATING_LIQUIDITY,
+  ERROR_LIQUIDITY,
+  ERROR_SIGNATURE,
+  ERROR_WITHDRAWAL,
+  ROUTER_ADDRESS,
+  WETH_ADDRESS
+} from '@/constants'
 import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
 import type { IPairData, IPairTokenData } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
@@ -176,10 +184,9 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       setToken0Approved(true)
       return
     }
+
     const amount = parseUnits(token0Value, Number(pool.token0.decimals))
-    approved(address, pool.token0.id, amount, publicClient)
-      .then(setToken0Approved)
-      .catch((err) => console.error(err))
+    approved(address, pool.token0.id, amount, publicClient).then(setToken0Approved)
   }, [address, token0Value, pool.token0.id, pool.token0.decimals, publicClient, approved])
 
   useEffect(() => {
@@ -187,10 +194,9 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       setToken1Approved(true)
       return
     }
+
     const amount = parseUnits(token1Value, Number(pool.token1.decimals))
-    approved(address, pool.token1.id, amount, publicClient)
-      .then(setToken1Approved)
-      .catch((err) => console.error(err))
+    approved(address, pool.token1.id, amount, publicClient).then(setToken1Approved)
   }, [address, token1Value, pool.token1.id, pool.token1.decimals, publicClient, approved])
 
   const handleToken0ValueChange = useCallback(
@@ -199,12 +205,16 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       setToken0Value(value)
       try {
         const inputAmount = parseUnits(value, Number(pool.token0.decimals))
+
         const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token0.id, pool)
+
         const formattedOutput = formatTokenBalance(outputAmount, Number(pool.token1.decimals))
+
         setToken1Value(formattedOutput)
-      } catch (error) {
-        console.error('Error calculating trade output for token0:', error)
+      } catch (err) {
+        console.error(ERROR_CALCULATING_LIQUIDITY(pool.token0.id, pool.token1.id, err))
       }
+
       setLoadingToken1(false)
     },
     [pool, calculateLiquidityCounterAmount]
@@ -214,13 +224,17 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
     (value: string) => {
       setLoadingToken0(true)
       setToken1Value(value)
+
       try {
         const inputAmount = parseUnits(value, Number(pool.token1.decimals))
+
         const outputAmount = calculateLiquidityCounterAmount(inputAmount, pool.token1.id, pool)
+
         const formattedOutput = formatTokenBalance(outputAmount, Number(pool.token0.decimals))
+
         setToken0Value(formattedOutput)
-      } catch (error) {
-        console.error('Error calculating trade output for token1:', error)
+      } catch (err) {
+        console.error(ERROR_CALCULATING_LIQUIDITY(pool.token0.id, pool.token1.id, err))
       }
       setLoadingToken0(false)
     },
@@ -228,36 +242,39 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
   )
 
   const handleApproveToken0 = useCallback(async () => {
-    if (!walletClient || !publicClient) return
+    if (!walletClient || !publicClient || !address) return
+
     setLoadingApproveToken0(true)
+
+    const amount = parseUnits(token0Value, Number(pool.token0.decimals))
+
     try {
-      const amount = parseUnits(token0Value, Number(pool.token0.decimals))
       await approve(pool.token0.id, amount, walletClient)
-      if (address) {
-        const isApproved = await approved(address, pool.token0.id, amount, publicClient)
-        setToken0Approved(isApproved)
-      }
+
+      setToken0Approved(true)
     } catch (err) {
-      console.error('Error approving token0:', err)
+      console.error(ERROR_APPROVE(pool.token0.id, amount.toString(), err))
     }
     setLoadingApproveToken0(false)
-  }, [token0Value, pool.token0, walletClient, publicClient, address, approve, approved])
+  }, [token0Value, pool.token0, walletClient, publicClient, address, approve])
 
   const handleApproveToken1 = useCallback(async () => {
-    if (!walletClient || !publicClient) return
+    if (!walletClient || !publicClient || !address) return
+
     setLoadingApproveToken1(true)
+
+    const amount = parseUnits(token1Value, Number(pool.token1.decimals))
+
     try {
-      const amount = parseUnits(token1Value, Number(pool.token1.decimals))
       await approve(pool.token1.id, amount, walletClient)
-      if (address) {
-        const isApproved = await approved(address, pool.token1.id, amount, publicClient)
-        setToken1Approved(isApproved)
-      }
+
+      setToken1Approved(true)
     } catch (err) {
-      console.error('Error approving token1:', err)
+      console.error(ERROR_APPROVE(pool.token1.id, amount.toString(), err))
     }
+
     setLoadingApproveToken1(false)
-  }, [token1Value, pool.token1, walletClient, publicClient, address, approve, approved])
+  }, [token1Value, pool.token1, walletClient, publicClient, address, approve])
 
   const token0Balance: bigint = getBalance(pool.token0.id)
   const token1Balance: bigint = getBalance(pool.token1.id)
@@ -292,10 +309,13 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
   const handleAddLiquidity = useCallback(async () => {
     if (!walletClient || !address) return
     setLoadingAddLiquidity(true)
+
+    const token0Amount = parseUnits(token0Value, Number(pool.token0.decimals))
+
+    const token1Amount = parseUnits(token1Value, Number(pool.token1.decimals))
+
     try {
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 100_000)
-      const token0Amount = parseUnits(token0Value, Number(pool.token0.decimals))
-      const token1Amount = parseUnits(token1Value, Number(pool.token1.decimals))
 
       if (pool.token0.id === WETH_ADDRESS || pool.token1.id === WETH_ADDRESS) {
         let token: IPairTokenData
@@ -325,11 +345,31 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       }
 
       close()
-    } catch (error) {
-      console.error('Error adding liquidity:', error)
+    } catch (err) {
+      console.error(
+        ERROR_LIQUIDITY(pool.token0.id, token0Amount.toString(), pool.token1.id, token1Amount.toString(), err)
+      )
     }
     setLoadingAddLiquidity(false)
   }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close])
+
+  const handleToken0MaxClick = useCallback(() => {
+    if (!getFormattedTokenBalance || !pool) return
+
+    const max = getFormattedTokenBalance(pool.token0.id)
+    if (!max) return
+
+    handleToken0ValueChange(max)
+  }, [getFormattedTokenBalance, handleToken0ValueChange, pool])
+
+  const handleToken1MaxClick = useCallback(() => {
+    if (!getFormattedTokenBalance || !pool) return
+
+    const max = getFormattedTokenBalance(pool.token1.id)
+    if (!max) return
+
+    handleToken0ValueChange(max)
+  }, [getFormattedTokenBalance, handleToken0ValueChange, pool])
 
   return (
     <motion.div
@@ -344,14 +384,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
     >
       <VStack height="400px" width="full" gap="15px" mt="20px">
         <HStack width="full" position="relative">
-          <Box
-            onClick={() => handleToken0ValueChange(getFormattedBalance(pool.token0.id))}
-            position="absolute"
-            cursor="pointer"
-            top="-25px"
-            right="0"
-            zIndex="30"
-          >
+          <Box onClick={handleToken0MaxClick} position="absolute" cursor="pointer" top="-25px" right="0" zIndex="30">
             <Text fontSize="xs" color="text-contrast">
               Available: {getFormattedBalance(pool.token0.id)}
             </Text>
@@ -377,14 +410,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
           </IconButton>
         </HStack>
         <HStack width="full" position="relative">
-          <Box
-            onClick={() => handleToken1ValueChange(getFormattedBalance(pool.token1.id))}
-            position="absolute"
-            cursor="pointer"
-            top="-25px"
-            right="0"
-            zIndex="30"
-          >
+          <Box onClick={handleToken1MaxClick} position="absolute" cursor="pointer" top="-25px" right="0" zIndex="30">
             <Text fontSize="xs" color="text-contrast">
               Available: {getFormattedBalance(pool.token1.id)}
             </Text>
@@ -469,12 +495,19 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     { v: bigint | undefined; r: `0x${string}`; s: `0x${string}`; deadline: bigint } | undefined
   >(undefined)
 
-  const { amountToken0, amountToken1 } = calculateWithdrawAmounts(
-    getFormattedPoolBalance(pool.id),
-    pool.totalSupply,
-    { reserve: pool.reserve0, decimals: pool.token0.decimals },
-    { reserve: pool.reserve1, decimals: pool.token1.decimals }
-  )
+  const { amountToken0, amountToken1 } = useMemo(() => {
+    const poolBalance = getFormattedPoolBalance(pool.id)
+
+    if (!poolBalance) return { amountToken0: '0', amountToken1: '0' }
+
+    const { amountToken0, amountToken1 } = calculateWithdrawAmounts(
+      poolBalance,
+      pool.totalSupply,
+      { reserve: pool.reserve0, decimals: pool.token0.decimals },
+      { reserve: pool.reserve1, decimals: pool.token1.decimals }
+    )
+    return { amountToken0, amountToken1 }
+  }, [getFormattedPoolBalance, pool])
 
   const handleSliderChange = useCallback((value: number) => {
     setSignature(undefined)
@@ -535,8 +568,8 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
       }
 
       close()
-    } catch (e) {
-      console.error('Withdrawal error:', e)
+    } catch (err) {
+      console.error(ERROR_WITHDRAWAL(poolBalanceWithdraw.toString(), pool.token0.id, pool.token1.id, err))
     }
     setLoadingWithdrawal(false)
   }, [
@@ -562,8 +595,8 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
         value: poolBalanceWithdraw
       })
       setSignature(sig)
-    } catch (e) {
-      console.error('Signature error:', e)
+    } catch (err) {
+      console.error(ERROR_SIGNATURE(err))
     }
     setLoadingSign(false)
   }, [walletClient, chainId, address, getPermitSignature, pool, poolBalanceWithdraw])
