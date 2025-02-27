@@ -14,7 +14,8 @@ import { GearIcon } from '../Icons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
 import { SwapToken } from './SwapToken'
 
-const SLIPPAGE = 15
+// TODO: Change to a global state
+const SLIPPAGE = 1
 
 const DEFAULT_INITIAL_TOKEN_0 = {
   address: '0x760afe86e5de5fa0ee542fc7b7b713e1c5425701',
@@ -54,6 +55,8 @@ export function Swap() {
   const [token1Value, setToken1Value] = useState('0')
 
   const [actionLoading, setActionLoading] = useState(false)
+
+  const { reloadTokenBalances } = useTokenBalancesStore()
 
   const [tokenSelectorDirection, setTokenSelectorDirection] = useState<'from' | 'to' | undefined>(undefined)
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
@@ -202,6 +205,11 @@ export function Swap() {
     } catch (err) {
       console.error(ERROR_SWAP(token0.address, token0Value, token1.address, token1Value, err))
     }
+
+    await reloadTokenBalances(address, [
+      { address: token0.address, decimals: token0.decimals },
+      { address: token1.address, decimals: token1.decimals }
+    ])
 
     setActionLoading(false)
   }, [

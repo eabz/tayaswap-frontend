@@ -40,7 +40,7 @@ import { Slider } from '../Slider'
 import { TokenIconGroup } from '../TokenIcon'
 
 // TODO: Change to a global state
-const SLIPPAGE = 5
+const SLIPPAGE = 1
 
 enum View {
   Selector = 0,
@@ -354,22 +354,22 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
   }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close])
 
   const handleToken0MaxClick = useCallback(() => {
-    if (!getFormattedTokenBalance || !pool) return
+    if (!getFormattedBalance || !pool) return
 
-    const max = getFormattedTokenBalance(pool.token0.id)
+    const max = getFormattedBalance(pool.token0.id)
     if (!max) return
 
     handleToken0ValueChange(max)
-  }, [getFormattedTokenBalance, handleToken0ValueChange, pool])
+  }, [getFormattedBalance, handleToken0ValueChange, pool])
 
   const handleToken1MaxClick = useCallback(() => {
-    if (!getFormattedTokenBalance || !pool) return
+    if (!getFormattedBalance || !pool) return
 
-    const max = getFormattedTokenBalance(pool.token1.id)
+    const max = getFormattedBalance(pool.token1.id)
     if (!max) return
 
     handleToken1ValueChange(max)
-  }, [getFormattedTokenBalance, handleToken1ValueChange, pool])
+  }, [getFormattedBalance, handleToken1ValueChange, pool])
 
   return (
     <motion.div
