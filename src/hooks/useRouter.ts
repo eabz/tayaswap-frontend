@@ -399,6 +399,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
       account: client.account as Account,
       value: ethAmount
     })
+
     await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
   }
 

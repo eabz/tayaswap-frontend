@@ -368,8 +368,8 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
     const max = getFormattedTokenBalance(pool.token1.id)
     if (!max) return
 
-    handleToken0ValueChange(max)
-  }, [getFormattedTokenBalance, handleToken0ValueChange, pool])
+    handleToken1ValueChange(max)
+  }, [getFormattedTokenBalance, handleToken1ValueChange, pool])
 
   return (
     <motion.div

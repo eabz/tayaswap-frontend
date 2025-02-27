@@ -14,7 +14,7 @@ import { GearIcon } from '../Icons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
 import { SwapToken } from './SwapToken'
 
-const SLIPPAGE = 5
+const SLIPPAGE = 15
 
 const DEFAULT_INITIAL_TOKEN_0 = {
   address: '0x760afe86e5de5fa0ee542fc7b7b713e1c5425701',
@@ -68,7 +68,6 @@ export function Swap() {
 
       if (tokenAddress !== WETH_ADDRESS) {
         const isApproved = await approved(address, tokenAddress, inputAmount, publicClient)
-
         setTokenApproved(isApproved)
       } else {
         setTokenApproved(true)
