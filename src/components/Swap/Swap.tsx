@@ -14,11 +14,10 @@ import { type ITokenListToken, usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import { Box, HStack, IconButton, VStack } from '@chakra-ui/react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { parseUnits, zeroAddress } from 'viem'
 import { useAccount, useBalance, usePublicClient, useWalletClient } from 'wagmi'
 import { SubmitButton } from '../Buttons'
-import { GearIcon } from '../Icons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
 import { TokenSelectorModal } from '../Modals'
 import { SwapToken } from './SwapToken'
@@ -46,19 +45,13 @@ const DEFAULT_INITIAL_TOKEN_1: ITokenListToken = {
 
 export function Swap() {
   const { colorMode } = useColorMode()
-
   const { data: pools } = usePools()
 
   const { address } = useAccount()
-
   const { refetch: refetchNativeTokenBalance } = useBalance({ address })
-
   const { data: walletClient } = useWalletClient()
-
   const publicClient = usePublicClient()
-
   const { reloadTokenBalances, updateTokenBalance } = useTokenBalancesStore()
-
   const { wrap, unwrap } = useWETH()
 
   const [token0, setToken0] = useState<ITokenListToken>(DEFAULT_INITIAL_TOKEN_0)
@@ -111,15 +104,12 @@ export function Swap() {
       setToken0Value(value)
       try {
         if (!pools || !publicClient || !address) return
-
         const inputAmount = parseUnits(value, token0.decimals)
-
         if (token0.address !== zeroAddress) {
           await checkApproved(token0.address, inputAmount)
         } else {
           setTokenApproved(true)
         }
-
         if (
           (token0.address === zeroAddress && token1.address === WETH_ADDRESS) ||
           (token0.address === WETH_ADDRESS && token1.address === zeroAddress)
@@ -151,7 +141,6 @@ export function Swap() {
       try {
         if (!pools || !publicClient) return
         const inputAmount = parseUnits(value, token1.decimals)
-
         if (
           (token0.address === zeroAddress && token1.address === WETH_ADDRESS) ||
           (token0.address === WETH_ADDRESS && token1.address === zeroAddress)
@@ -175,6 +164,15 @@ export function Swap() {
     },
     [token0, token1, pools, publicClient]
   )
+
+  useEffect(() => {
+    if (address && pools) {
+      reloadTokenBalances(address, [
+        { address: token0.address, decimals: token0.decimals },
+        { address: token1.address, decimals: token1.decimals }
+      ])
+    }
+  }, [token0, token1, address, pools, reloadTokenBalances])
 
   const handleSwapClick = useCallback(async () => {
     if (!address || !publicClient) return
@@ -209,22 +207,18 @@ export function Swap() {
     setActionLoading(true)
     try {
       await wrap(amount, walletClient)
-
       setToken1Value(token0Value)
     } catch (err) {
       console.error(ERROR_WRAP(err))
     }
-
     await reloadTokenBalances(address, [
       { address: token0.address, decimals: token0.decimals },
       { address: token1.address, decimals: token1.decimals }
     ])
-
     const { data } = await refetchNativeTokenBalance()
     if (data) {
       updateTokenBalance(zeroAddress, data.value, data.decimals)
     }
-
     setActionLoading(false)
   }, [
     walletClient,
@@ -248,14 +242,11 @@ export function Swap() {
     } catch (err) {
       console.error(ERROR_UNWRAP(err))
     }
-
     await reloadTokenBalances(address, [
       { address: token0.address, decimals: token0.decimals },
       { address: token1.address, decimals: token1.decimals }
     ])
-
     await refetchNativeTokenBalance()
-
     setActionLoading(false)
   }, [walletClient, address, token0Value, token0, token1, unwrap, reloadTokenBalances, refetchNativeTokenBalance])
 
@@ -270,13 +261,11 @@ export function Swap() {
       pools,
       SLIPPAGE
     )
-
     if (!route || route.length === 0) {
       console.error(ERROR_ROUTE(token0.address, token1.address))
       setActionLoading(false)
       return
     }
-
     const amountOutMin = parseUnits(token1Value, token1.decimals)
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
     try {
@@ -316,14 +305,38 @@ export function Swap() {
     handleUnwrap
   ])
 
-  const handleTokenSelect = (token: ITokenListToken) => {
-    if (tokenSelectorDirection === 'from') {
-      setToken0(token)
-    }
-    if (tokenSelectorDirection === 'to') {
-      setToken1(token)
-    }
-  }
+  const handleTokenSelect = useCallback(
+    (token: ITokenListToken) => {
+      if (tokenSelectorDirection === 'from') {
+        if (token.address === token1.address) {
+          return
+        }
+        setToken0(token)
+        if (token0Value !== '0') {
+          handleToken0InputChange(token0Value)
+        }
+      }
+      if (tokenSelectorDirection === 'to') {
+        if (token.address === token0.address) {
+          return
+        }
+        setToken1(token)
+        if (token1Value !== '0') {
+          handleToken1InputChange(token1Value)
+        }
+      }
+      setTokenSelectorOpen(false)
+    },
+    [
+      tokenSelectorDirection,
+      token0.address,
+      token1.address,
+      token0Value,
+      token1Value,
+      handleToken0InputChange,
+      handleToken1InputChange
+    ]
+  )
 
   const conversionMode = useMemo(() => {
     if (token0.address === zeroAddress && token1.address === WETH_ADDRESS) return 'wrap'
@@ -359,12 +372,12 @@ export function Swap() {
         borderColor="swap-border"
         bgImage={colorMode === 'dark' ? 'linear-gradient(#070E2B, #132E7F)' : 'linear-gradient(#142E78, #4762B9)'}
       >
-        <VStack width="full" height="full" px="30px">
-          <HStack justifyContent="end" width="full" py="3">
+        <VStack width="full" height="full" px="30px" py="50px">
+          {/* <HStack justifyContent="end" width="full" py="3">
             <IconButton variant="ghost" color="white" _hover={{ background: 'none' }}>
               <GearIcon />
             </IconButton>
-          </HStack>
+          </HStack> */}
           <SwapToken
             direction="from"
             tokenAddress={token0.address}
