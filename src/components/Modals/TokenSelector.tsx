@@ -94,7 +94,7 @@ export function TokenSelectorModal({ open, onSelectToken, close }: ITokenSelecto
   }
 
   return (
-    <Box position="absolute" top="0" left="0" width="full" height="full" px="5" border="2px solid">
+    <Box position="absolute" top="0" left="0" width="full" height="full" px="5">
       <Center height="full" width="full">
         <DialogRoot open={open} size="xs" motionPreset="scale">
           <DialogBackdrop />

@@ -1,5 +1,5 @@
 import type { IPairData } from '@/services'
-import { PAIR_ABI } from '@/utils/abis/pair'
+import { PAIR_ABI } from '@/utils'
 import { parseSignature } from 'viem'
 import { useReadContract, useSignTypedData } from 'wagmi'
 
