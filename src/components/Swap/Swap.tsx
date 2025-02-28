@@ -19,12 +19,12 @@ import { SwapToken } from './SwapToken'
 const SLIPPAGE = 1
 
 const DEFAULT_INITIAL_TOKEN_0 = {
-  address: '0x760afe86e5de5fa0ee542fc7b7b713e1c5425701',
+  address: '0x0000000000000000000000000000000000000000',
   chainId: 10143,
-  name: 'Wrapped Monad',
-  symbol: 'WMON',
+  name: 'Monad Testnet',
+  symbol: 'TMON',
   decimals: 18,
-  logoURI: 'https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/wmon.jpg'
+  logoURI: 'https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokens/mon.jpg'
 }
 
 const DEFAULT_INITIAL_TOKEN_1 = {
