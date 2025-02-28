@@ -121,7 +121,7 @@ export function Swap() {
         }
 
         if (
-          (token1.address === zeroAddress && token0.address === WETH_ADDRESS) ||
+          (token0.address === zeroAddress && token1.address === WETH_ADDRESS) ||
           (token0.address === WETH_ADDRESS && token1.address === zeroAddress)
         ) {
           setToken1Value(value)
@@ -153,7 +153,7 @@ export function Swap() {
         const inputAmount = parseUnits(value, token1.decimals)
 
         if (
-          (token1.address === zeroAddress && token0.address === WETH_ADDRESS) ||
+          (token0.address === zeroAddress && token1.address === WETH_ADDRESS) ||
           (token0.address === WETH_ADDRESS && token1.address === zeroAddress)
         ) {
           setToken0Value(value)
@@ -226,7 +226,17 @@ export function Swap() {
     }
 
     setActionLoading(false)
-  }, [walletClient, address, token0Value, token0, token1, wrap, reloadTokenBalances, refetchNativeTokenBalance])
+  }, [
+    walletClient,
+    address,
+    token0Value,
+    token0,
+    token1,
+    wrap,
+    reloadTokenBalances,
+    refetchNativeTokenBalance,
+    updateTokenBalance
+  ])
 
   const handleUnwrap = useCallback(async () => {
     if (!walletClient || !address) return
