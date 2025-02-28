@@ -12,7 +12,7 @@ import {
 } from '@/constants'
 import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
 import type { IPairData, IPairTokenData } from '@/services'
-import { useTokenBalancesStore } from '@/stores'
+import { useSlippage, useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import {
   Box,
@@ -144,6 +144,8 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
   const [token0Approved, setToken0Approved] = useState(true)
 
   const [token1Approved, setToken1Approved] = useState(true)
+
+  const { slippage } = useSlippage()
 
   const { tokenBalances, getFormattedTokenBalance } = useTokenBalancesStore()
 
@@ -478,6 +480,8 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
   const { address, chainId } = useAccount()
 
   const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
+
+  const { slippage } = useSlippage()
 
   const [withdrawValue, setWithdrawValue] = useState(50)
 

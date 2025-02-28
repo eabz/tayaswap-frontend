@@ -1,16 +1,18 @@
-import { ERROR_TOKEN_POOL, ROUTER_ADDRESS } from '@/constants'
+import { ROUTER_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
 import type { IPairData, IPairTokenData } from '@/services'
 import { ROUTER_ABI } from '@/utils'
-import { type Account, type WalletClient, parseUnits } from 'viem'
+import { type Account, type PublicClient, type WalletClient, parseUnits } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 
 interface ITayaSwapRouter {
   calculateLiquidityCounterAmount: (inputAmount: bigint, inputToken: string, pool: IPairData) => bigint
+  calculateTradeOutput: (inputAmount: bigint, path: string[], client: PublicClient) => Promise<bigint>
   removeLiquidityWithPermit: (
     token0: IPairTokenData,
     token1: IPairTokenData,
     liquidity: bigint,
+    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -22,6 +24,7 @@ interface ITayaSwapRouter {
   removeLiquidityETHWithPermit: (
     token: IPairTokenData,
     liquidity: bigint,
+    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -35,19 +38,19 @@ interface ITayaSwapRouter {
     token1: IPairTokenData,
     amountADesired: bigint,
     amountBDesired: bigint,
+    slippage: number,
     toAddress: string,
     client: WalletClient,
-    deadline: bigint,
-    pools: IPairData[]
+    deadline: bigint
   ) => Promise<void>
   addLiquidityETH: (
     token: IPairTokenData,
     amountTokenDesired: bigint,
     amountETHDesired: bigint,
+    slippage: number,
     toAddress: string,
     client: WalletClient,
-    deadline: bigint,
-    pools: IPairData[]
+    deadline: bigint
   ) => Promise<void>
   swapExactTokensForTokens: (
     amountIn: bigint,
@@ -55,8 +58,7 @@ interface ITayaSwapRouter {
     path: string[],
     toAddress: string,
     client: WalletClient,
-    deadline: bigint,
-    pools: IPairData[]
+    deadline: bigint
   ) => Promise<void>
   swapExactETHForTokens: (
     amountOutMin: bigint,
@@ -64,8 +66,7 @@ interface ITayaSwapRouter {
     toAddress: string,
     client: WalletClient,
     deadline: bigint,
-    ethAmount: bigint,
-    pools: IPairData[]
+    ethAmount: bigint
   ) => Promise<void>
   swapExactTokensForETH: (
     amountIn: bigint,
@@ -73,50 +74,16 @@ interface ITayaSwapRouter {
     path: string[],
     toAddress: string,
     client: WalletClient,
-    deadline: bigint,
-    pools: IPairData[]
+    deadline: bigint
   ) => Promise<void>
-}
-
-export function poolImpact(inputAmount: bigint, inputToken: string, pool: IPairData): number {
-  if (inputAmount === 0n) return 0
-
-  const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
-  const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
-
-  let reserveIn: bigint
-  let reserveOut: bigint
-
-  if (inputToken.toLowerCase() === pool.token0.id.toLowerCase()) {
-    reserveIn = reserve0
-    reserveOut = reserve1
-  } else if (inputToken.toLowerCase() === pool.token1.id.toLowerCase()) {
-    reserveIn = reserve1
-    reserveOut = reserve0
-  } else {
-    throw new Error(ERROR_TOKEN_POOL(inputToken, pool.id))
-  }
-
-  const amountInWithFee = inputAmount * 997n
-
-  const numerator = amountInWithFee * reserveOut
-
-  const denominator = reserveIn * 1000n + amountInWithFee
-
-  const amountOut = numerator / denominator
-
-  const exactQuote = (inputAmount * reserveOut) / reserveIn
-
-  const impact = ((exactQuote - amountOut) * 10000n) / exactQuote
-
-  return Number(impact) / 100
 }
 
 export async function findBestRoute(
   inputAmount: bigint,
   tokenIn: string,
   tokenOut: string,
-  pools: IPairData[]
+  pools: IPairData[],
+  slippage: number
 ): Promise<{ route: string[]; output: bigint }> {
   if (inputAmount === 0n) return { route: [], output: 0n }
 
@@ -169,7 +136,7 @@ export async function findBestRoute(
     }
   }
 
-  function getPool(tokenA: string, tokenB: string, pools: IPairData[]): IPairData | undefined {
+  function getPool(tokenA: string, tokenB: string): IPairData | undefined {
     return pools.find(
       (p) =>
         (p.token0.id.toLowerCase() === tokenA.toLowerCase() && p.token1.id.toLowerCase() === tokenB.toLowerCase()) ||
@@ -200,7 +167,7 @@ export async function findBestRoute(
 
       const tokenB = route[i + 1]
 
-      const pool = getPool(tokenA, tokenB, pools)
+      const pool = getPool(tokenA, tokenB)
 
       if (!pool) {
         valid = false
@@ -248,7 +215,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     } else if (inputToken === pool.token1.id) {
       idealCounter = (inputAmount * reserve0 + reserve1 - 1n) / reserve1
     } else {
-      throw new Error(ERROR_TOKEN_POOL(inputToken, pool.id))
+      throw new Error('Input token is not part of this pool')
     }
 
     return idealCounter
@@ -258,6 +225,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     token0: IPairTokenData,
     token1: IPairTokenData,
     liquidity: bigint,
+    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -291,6 +259,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
   const removeLiquidityETHWithPermit = async (
     token: IPairTokenData,
     liquidity: bigint,
+    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -313,7 +282,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
       expectedTokenAmount = (liquidity * reserve1) / totalSupply
       expectedETHAmount = (liquidity * reserve0) / totalSupply
     } else {
-      throw new Error(ERROR_TOKEN_POOL(token.id, pool.id))
+      throw new Error('Token is not part of this pool')
     }
 
     const minTokenAmount = (expectedTokenAmount * BigInt(100 - slippage)) / 100n
@@ -331,25 +300,31 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
   }
 
+  async function calculateTradeOutput(inputAmount: bigint, path: string[], client: PublicClient): Promise<bigint> {
+    if (inputAmount === 0n) return 0n
+
+    const amounts = (await client.readContract({
+      address: ROUTER_ADDRESS,
+      abi: ROUTER_ABI,
+      functionName: 'getAmountsOut',
+      args: [inputAmount, path]
+    })) as bigint[]
+
+    return amounts[amounts.length - 1]
+  }
+
   const addLiquidity = async (
     token0: IPairTokenData,
     token1: IPairTokenData,
     amountADesired: bigint,
     amountBDesired: bigint,
+    slippage: number,
     toAddress: string,
     client: WalletClient,
-    deadline: bigint,
-    pools: IPairData[]
+    deadline: bigint
   ): Promise<void> => {
-    const pool = getPool(token0.id, token1.id, pools)
-    if (!pool) throw new Error(ERROR_TOKEN_POOL(token0.id, token1.id))
-
-    const impactA = poolImpact(amountADesired, token0.id, pool)
-    const impactB = poolImpact(amountBDesired, token1.id, pool)
-    const slippage = calculateSlippageWithImpact(Math.max(impactA, impactB))
-
-    const minAmountA = (amountADesired * BigInt(100 - Math.round(slippage * 100))) / 100n
-    const minAmountB = (amountBDesired * BigInt(100 - Math.round(slippage * 100))) / 100n
+    const minAmountA = (amountADesired * BigInt(100 - slippage)) / 100n
+    const minAmountB = (amountBDesired * BigInt(100 - slippage)) / 100n
 
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
@@ -359,6 +334,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
       chain: client.chain,
       account: client.account as Account
     })
+
     await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
   }
 
@@ -366,20 +342,13 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     token: IPairTokenData,
     amountTokenDesired: bigint,
     amountETHDesired: bigint,
+    slippage: number,
     toAddress: string,
     client: WalletClient,
-    deadline: bigint,
-    pools: IPairData[]
+    deadline: bigint
   ): Promise<void> => {
-    const pool = getPool(token.id, path[path.length - 1], pools) // ETH is always the last token in the path
-    if (!pool) throw new Error(ERROR_TOKEN_POOL(token.id, path[path.length - 1]))
-
-    const impactToken = poolImpact(amountTokenDesired, token.id, pool)
-    const impactETH = poolImpact(amountETHDesired, path[path.length - 1], pool)
-    const slippage = calculateSlippageWithImpact(Math.max(impactToken, impactETH))
-
-    const minTokenAmount = (amountTokenDesired * BigInt(100 - Math.round(slippage * 100))) / 100n
-    const minETHAmount = (amountETHDesired * BigInt(100 - Math.round(slippage * 100))) / 100n
+    const minTokenAmount = (amountTokenDesired * BigInt(100 - slippage)) / 100n
+    const minETHAmount = (amountETHDesired * BigInt(100 - slippage)) / 100n
 
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
@@ -390,6 +359,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
       account: client.account as Account,
       value: amountETHDesired
     })
+
     await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
   }
 
@@ -399,25 +369,13 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     path: string[],
     toAddress: string,
     client: WalletClient,
-    deadline: bigint,
-    pools: IPairData[]
+    deadline: bigint
   ): Promise<void> => {
-    // For multi-hop trades, calculate cumulative impact
-    let totalImpact = 0
-    for (let i = 0; i < path.length - 1; i++) {
-      const pool = getPool(path[i], path[i + 1], pools)
-      if (!pool) throw new Error(ERROR_TOKEN_POOL(path[i], path[i + 1]))
-      totalImpact += poolImpact(i === 0 ? amountIn : amountOutMin, path[i], pool)
-    }
-
-    const slippage = calculateSlippageWithImpact(totalImpact)
-    const minAmountOut = (amountOutMin * BigInt(100 - Math.round(slippage * 100))) / 100n
-
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
       abi: ROUTER_ABI,
       functionName: 'swapExactTokensForTokens',
-      args: [amountIn, minAmountOut, path, toAddress, deadline],
+      args: [amountIn, amountOutMin, path, toAddress, deadline],
       chain: client.chain,
       account: client.account as Account
     })
@@ -430,29 +388,18 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     toAddress: string,
     client: WalletClient,
     deadline: bigint,
-    ethAmount: bigint,
-    pools: IPairData[]
+    ethAmount: bigint
   ): Promise<void> => {
-    // Calculate impact starting from ETH input
-    let totalImpact = 0
-    for (let i = 0; i < path.length - 1; i++) {
-      const pool = getPool(path[i], path[i + 1], pools)
-      if (!pool) throw new Error(ERROR_TOKEN_POOL(path[i], path[i + 1]))
-      totalImpact += poolImpact(i === 0 ? ethAmount : amountOutMin, path[i], pool)
-    }
-
-    const slippage = calculateSlippageWithImpact(totalImpact)
-    const minAmountOut = (amountOutMin * BigInt(100 - Math.round(slippage * 100))) / 100n
-
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
       abi: ROUTER_ABI,
       functionName: 'swapExactETHForTokens',
-      args: [minAmountOut, path, toAddress, deadline],
+      args: [amountOutMin, path, toAddress, deadline],
       chain: client.chain,
       account: client.account as Account,
       value: ethAmount
     })
+
     await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
   }
 
@@ -462,25 +409,13 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     path: string[],
     toAddress: string,
     client: WalletClient,
-    deadline: bigint,
-    pools: IPairData[]
+    deadline: bigint
   ): Promise<void> => {
-    // Calculate impact for the path to ETH
-    let totalImpact = 0
-    for (let i = 0; i < path.length - 1; i++) {
-      const pool = getPool(path[i], path[i + 1], pools)
-      if (!pool) throw new Error(ERROR_TOKEN_POOL(path[i], path[i + 1]))
-      totalImpact += poolImpact(i === 0 ? amountIn : amountOutMin, path[i], pool)
-    }
-
-    const slippage = calculateSlippageWithImpact(totalImpact)
-    const minAmountOut = (amountOutMin * BigInt(100 - Math.round(slippage * 100))) / 100n
-
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
       abi: ROUTER_ABI,
       functionName: 'swapExactTokensForETH',
-      args: [amountIn, minAmountOut, path, toAddress, deadline],
+      args: [amountIn, amountOutMin, path, toAddress, deadline],
       chain: client.chain,
       account: client.account as Account
     })
@@ -488,10 +423,10 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
   }
 
   return {
-    calculatePoolImpact: poolImpact,
     calculateLiquidityCounterAmount,
     removeLiquidityWithPermit,
     removeLiquidityETHWithPermit,
+    calculateTradeOutput,
     addLiquidity,
     addLiquidityETH,
     swapExactTokensForTokens,
