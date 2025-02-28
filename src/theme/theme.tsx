@@ -109,6 +109,9 @@ const SEMANTIC_TOKENS = {
     },
     'token-selector-input-border': {
       value: { _light: '#EDEDED', _dark: '#243350' }
+    },
+    'token-selector-item-hover': {
+      value: { _light: '#F2F3F7', _dark: '#141B21' }
     }
   }
 }

@@ -37,13 +37,13 @@ function TokenItem({
 
   return (
     <HStack
-      height="40px"
+      height="50px"
       justifyContent="space-between"
       px="3"
-      my="2"
+      py="2"
       width="full"
       cursor="pointer"
-      _hover={{}}
+      _hover={{ background: 'token-selector-item-hover' }}
       onClick={() => onSelectToken(token)}
     >
       <HStack justifyContent="start" height="40px">

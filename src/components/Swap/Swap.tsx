@@ -46,7 +46,6 @@ const DEFAULT_INITIAL_TOKEN_1: ITokenListToken = {
 export function Swap() {
   const { colorMode } = useColorMode()
   const { data: pools } = usePools()
-
   const { address } = useAccount()
   const { refetch: refetchNativeTokenBalance } = useBalance({ address })
   const { data: walletClient } = useWalletClient()
