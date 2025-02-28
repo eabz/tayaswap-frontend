@@ -28,3 +28,7 @@ export const ERROR_ROUTE = (token0: string, token1: string) =>
 
 export const ERROR_SWAP = (token0: string, token0Amount: string, token1: string, token1Amount: string, err: unknown) =>
   `Error executing swap for token0 ${token0} amount ${token0Amount} token1 ${token1} amount ${token1Amount}: ${err}`
+
+export const ERROR_WRAP = (err: unknown) => `Error trying to wrap ETH: ${err}`
+
+export const ERROR_UNWRAP = (err: unknown) => `Error trying to unwrap WETH: ${err}`
