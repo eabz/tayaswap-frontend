@@ -1,4 +1,5 @@
 'use client'
+import { TRANSITION_VARIANTS } from '@/constants'
 import {
   Box,
   Center,
@@ -26,21 +27,6 @@ interface ICreatePoolModalProps {
 enum View {
   Pairs = 0,
   Liquidity = 1
-}
-
-const VARIANTS = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 300 : -300,
-    opacity: 0
-  }),
-  center: {
-    x: 0,
-    opacity: 1
-  },
-  exit: (direction: number) => ({
-    x: direction > 0 ? -300 : 300,
-    opacity: 0
-  })
 }
 
 export function CreatePoolsModal({ open, close, onClose }: ICreatePoolModalProps) {
@@ -86,7 +72,7 @@ export function CreatePoolsModal({ open, close, onClose }: ICreatePoolModalProps
                     <motion.div
                       key="selector"
                       custom={1}
-                      variants={VARIANTS}
+                      variants={TRANSITION_VARIANTS}
                       initial="enter"
                       animate="center"
                       exit="exit"
@@ -101,7 +87,7 @@ export function CreatePoolsModal({ open, close, onClose }: ICreatePoolModalProps
                     <motion.div
                       key="addLiquidity"
                       custom={1}
-                      variants={VARIANTS}
+                      variants={TRANSITION_VARIANTS}
                       initial="enter"
                       animate="center"
                       exit="exit"

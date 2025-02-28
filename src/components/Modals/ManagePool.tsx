@@ -7,6 +7,7 @@ import {
   ERROR_SIGNATURE,
   ERROR_WITHDRAWAL,
   ROUTER_ADDRESS,
+  TRANSITION_VARIANTS,
   WETH_ADDRESS
 } from '@/constants'
 import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
@@ -48,21 +49,6 @@ enum View {
   RemoveLiquidity = 2
 }
 
-const VARIANTS = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 300 : -300,
-    opacity: 0
-  }),
-  center: {
-    x: 0,
-    opacity: 1
-  },
-  exit: (direction: number) => ({
-    x: direction > 0 ? -300 : 300,
-    opacity: 0
-  })
-}
-
 export function calculateWithdrawAmounts(
   userBalance: string,
   totalSupply: string,
@@ -98,7 +84,7 @@ function SelectActionView({ direction, changeView }: IViewProps) {
     <motion.div
       key="selector"
       custom={direction}
-      variants={VARIANTS}
+      variants={TRANSITION_VARIANTS}
       initial="enter"
       animate="center"
       exit="exit"
@@ -375,7 +361,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
     <motion.div
       key="addLiquidity"
       custom={direction}
-      variants={VARIANTS}
+      variants={TRANSITION_VARIANTS}
       initial="enter"
       animate="center"
       exit="exit"
@@ -606,7 +592,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     <motion.div
       key="removeLiquidity"
       custom={direction}
-      variants={VARIANTS}
+      variants={TRANSITION_VARIANTS}
       initial="enter"
       animate="center"
       exit="exit"
@@ -736,8 +722,8 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
   )
 
   return (
-    <Box position="absolute" width={{ base: 'full', lg: 'calc(100vw - 600px)' }} px="5">
-      <Center height="calc(100dvh - 400px)">
+    <Box position="absolute" top="0" left="0" width="full" height="full" px="5">
+      <Center height="full" width="full">
         <DialogRoot open={open} size="xs" motionPreset="scale" onExitComplete={onClose}>
           <DialogBackdrop />
           <DialogContent rounded="25px" background="modal-background" border="1px solid" borderColor="modal-border">
@@ -778,7 +764,7 @@ export function ManagePoolModal({ pool, open, onClose, close }: IManagePoolModal
               </HStack>
             </DialogHeader>
             <DialogBody>
-              <Box height="400px" position="relative">
+              <Box height="400px" position="relative" overflow="hidden">
                 <AnimatePresence initial={false} custom={direction}>
                   {view === View.Selector && (
                     <SelectActionView direction={direction} changeView={changeView} pool={pool} close={close} />

@@ -2,7 +2,7 @@
 
 import { ERROR_APPROVE, ERROR_CALCULATING_TRADE, ERROR_ROUTE, ERROR_SWAP, WETH_ADDRESS } from '@/constants'
 import { findBestRoute, useColorMode, useERC20Token, useTayaSwapRouter } from '@/hooks'
-import { usePools } from '@/services'
+import { type ITokenListToken, usePools } from '@/services'
 import { useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import { Box, HStack, IconButton, VStack } from '@chakra-ui/react'
@@ -12,6 +12,7 @@ import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { SubmitButton } from '../Buttons'
 import { GearIcon } from '../Icons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
+import { TokenSelectorModal } from '../Modals'
 import { SwapToken } from './SwapToken'
 
 // TODO: Change to a global state
@@ -29,8 +30,8 @@ const DEFAULT_INITIAL_TOKEN_0 = {
 const DEFAULT_INITIAL_TOKEN_1 = {
   address: '0x88b8e2161dedc77ef4ab7585569d2415a1c1055d',
   chainId: 10143,
-  name: 'tayUSDT',
-  symbol: 'tayUSDT',
+  name: 'Tether USDT',
+  symbol: 'USDT',
   decimals: 6,
   logoURI: 'https://raw.githubusercontent.com/eabz/taya-assets/master/blockchains/monad/usdt.png'
 }
@@ -46,11 +47,11 @@ export function Swap() {
 
   const publicClient = usePublicClient()
 
-  const [token0, setToken0] = useState(DEFAULT_INITIAL_TOKEN_0)
+  const [token0, setToken0] = useState<ITokenListToken>(DEFAULT_INITIAL_TOKEN_0)
   const [loadingToken0Value, setLoadingToken0Value] = useState(false)
   const [token0Value, setToken0Value] = useState('0')
 
-  const [token1, setToken1] = useState(DEFAULT_INITIAL_TOKEN_1)
+  const [token1, setToken1] = useState<ITokenListToken>(DEFAULT_INITIAL_TOKEN_1)
   const [loadingToken1Value, setLoadingToken1Value] = useState(false)
   const [token1Value, setToken1Value] = useState('0')
 
@@ -221,71 +222,89 @@ export function Swap() {
     token1,
     token0Value,
     token1Value,
+    reloadTokenBalances,
     swapExactETHForTokens,
     swapExactTokensForETH,
     swapExactTokensForTokens
   ])
 
+  const handleTokenSelect = (token: ITokenListToken) => {
+    if (tokenSelectorDirection === 'from') {
+      setToken0(token)
+    }
+
+    if (tokenSelectorDirection === 'to') {
+      setToken1(token)
+    }
+  }
+
   return (
-    <Box
-      width={{ base: '350px', lg: '430px' }}
-      height="475px"
-      boxShadow="md"
-      borderRadius="25px"
-      border="2px solid"
-      borderColor="swap-border"
-      bgImage={colorMode === 'dark' ? 'linear-gradient(#070E2B, #132E7F)' : 'linear-gradient(#142E78, #4762B9)'}
-    >
-      <VStack width="full" height="full" px="30px">
-        <HStack justifyContent="end" width="full" py="3">
-          <IconButton variant="ghost" color="white" _hover={{ background: 'none' }}>
-            <GearIcon />
-          </IconButton>
-        </HStack>
+    <>
+      <TokenSelectorModal
+        open={tokenSelectorOpen}
+        onSelectToken={handleTokenSelect}
+        close={() => setTokenSelectorOpen(false)}
+      />
+      <Box
+        width={{ base: '350px', lg: '430px' }}
+        height="475px"
+        boxShadow="md"
+        borderRadius="25px"
+        border="2px solid"
+        borderColor="swap-border"
+        bgImage={colorMode === 'dark' ? 'linear-gradient(#070E2B, #132E7F)' : 'linear-gradient(#142E78, #4762B9)'}
+      >
+        <VStack width="full" height="full" px="30px">
+          <HStack justifyContent="end" width="full" py="3">
+            <IconButton variant="ghost" color="white" _hover={{ background: 'none' }}>
+              <GearIcon />
+            </IconButton>
+          </HStack>
 
-        <SwapToken
-          direction="from"
-          tokenAddress={token0.address}
-          tokenSymbol={token0.symbol}
-          onInputValueChange={handleToken0InputChange}
-          onMaxClick={handleToken0MaxClick}
-          onTokenSelectorClick={() => handleTokenSelectorOpen('from')}
-          inputValue={token0Value}
-          loading={loadingToken0Value}
-        />
+          <SwapToken
+            direction="from"
+            tokenAddress={token0.address}
+            tokenSymbol={token0.symbol}
+            onInputValueChange={handleToken0InputChange}
+            onMaxClick={handleToken0MaxClick}
+            onTokenSelectorClick={() => handleTokenSelectorOpen('from')}
+            inputValue={token0Value}
+            loading={loadingToken0Value}
+          />
 
-        <HStack width="full" justifyContent="center" mt="-4" mb="-4">
-          <IconButton
-            onClick={handleSwapClick}
-            color="white"
-            size="xl"
-            background="swap-token-background"
-            border="3px solid"
-            borderColor="swap-change-button-border"
-            rounded="full"
-          >
-            <ArrowUpArrowDownIcon height="24px" width="24px" color="text-contrast" />
-          </IconButton>
-        </HStack>
-        <SwapToken
-          direction="to"
-          tokenAddress={token1.address}
-          tokenSymbol={token1.symbol}
-          onInputValueChange={handleToken1InputChange}
-          onTokenSelectorClick={() => handleTokenSelectorOpen('to')}
-          inputValue={token1Value}
-          loading={loadingToken1Value}
-        />
+          <HStack width="full" justifyContent="center" mt="-4" mb="-4">
+            <IconButton
+              onClick={handleSwapClick}
+              color="white"
+              size="xl"
+              background="swap-token-background"
+              border="3px solid"
+              borderColor="swap-change-button-border"
+              rounded="full"
+            >
+              <ArrowUpArrowDownIcon height="24px" width="24px" color="text-contrast" />
+            </IconButton>
+          </HStack>
+          <SwapToken
+            direction="to"
+            tokenAddress={token1.address}
+            tokenSymbol={token1.symbol}
+            onInputValueChange={handleToken1InputChange}
+            onTokenSelectorClick={() => handleTokenSelectorOpen('to')}
+            inputValue={token1Value}
+            loading={loadingToken1Value}
+          />
 
-        <SubmitButton
-          mt="15px"
-          text={tokenApproved ? 'Trade' : 'Approve'}
-          loading={actionLoading}
-          onClickHandler={tokenApproved ? handleSwap : handleApprove}
-          disabled={token0Value === '0' || token1Value === '0'}
-          width="full"
-        />
-      </VStack>
-    </Box>
+          <SubmitButton
+            mt="15px"
+            text={tokenApproved ? 'Trade' : 'Approve'}
+            loading={actionLoading}
+            onClickHandler={tokenApproved ? handleSwap : handleApprove}
+            disabled={token0Value === '0' || token1Value === '0'}
+            width="full"
+          />
+        </VStack>
+      </Box>
+    </>
   )
 }

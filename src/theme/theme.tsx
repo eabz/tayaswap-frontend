@@ -97,6 +97,18 @@ const SEMANTIC_TOKENS = {
     },
     'token-selector-chevron-color': {
       value: '#A7ACB0'
+    },
+    'token-selector-modal-background': {
+      value: { _light: '#F2F3F7', _dark: '#141B21' }
+    },
+    'token-selector-modal-border': {
+      value: { _light: '#F2F3F7', _dark: '#1D2946' }
+    },
+    'token-selector-input-background': {
+      value: { _light: '#FDFDFD', _dark: '#131624' }
+    },
+    'token-selector-input-border': {
+      value: { _light: '#EDEDED', _dark: '#243350' }
     }
   }
 }

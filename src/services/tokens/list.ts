@@ -1,8 +1,7 @@
 import type { SWRConfiguration } from 'swr'
 import useSwr from 'swr'
 
-const TOKENS_LIST =
-  'https://raw.githubusercontent.com/eabz/tayaswap-frontend/refs/heads/main/public/assets/tokenlist.json'
+const TOKENS_LIST = '/assets/tokenlist.json'
 
 export interface ITokenListToken {
   address: string
