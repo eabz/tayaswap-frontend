@@ -11,7 +11,7 @@ import {
 } from '@/constants'
 import { findBestRoute, useColorMode, useERC20Token, useTayaSwapRouter, useWETH } from '@/hooks'
 import { type ITokenListToken, usePools } from '@/services'
-import { useSlippage, useTokenBalancesStore } from '@/stores'
+import { useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import { Box, HStack, IconButton, VStack } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -56,8 +56,6 @@ export function Swap() {
   const { reloadTokenBalances, updateTokenBalance } = useTokenBalancesStore()
 
   const { wrap, unwrap } = useWETH()
-
-  const { slippage } = useSlippage()
 
   const [token0, setToken0] = useState<ITokenListToken>(DEFAULT_INITIAL_TOKEN_0)
   const [loadingToken0Value, setLoadingToken0Value] = useState(false)
@@ -379,11 +377,6 @@ export function Swap() {
         bgImage={colorMode === 'dark' ? 'linear-gradient(#070E2B, #132E7F)' : 'linear-gradient(#142E78, #4762B9)'}
       >
         <VStack width="full" height="full" px="30px" py="50px">
-          {/* <HStack justifyContent="end" width="full" py="3">
-            <IconButton variant="ghost" color="white" _hover={{ background: 'none' }}>
-              <GearIcon />
-            </IconButton>
-          </HStack> */}
           <SwapToken
             direction="from"
             tokenAddress={token0.address}
