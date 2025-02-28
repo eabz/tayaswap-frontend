@@ -12,7 +12,7 @@ import {
 } from '@/constants'
 import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
 import type { IPairData, IPairTokenData } from '@/services'
-import { useTokenBalancesStore } from '@/stores'
+import { useSlippage, useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import {
   Box,
@@ -39,9 +39,6 @@ import { ChevronLeftIcon, CloseIcon, PlusIcon } from '../Icons'
 import { AddLiquidityTokenAmountInput } from '../Input'
 import { Slider } from '../Slider'
 import { TokenIconGroup } from '../TokenIcon'
-
-// TODO: Change to a global state
-const SLIPPAGE = 1
 
 enum View {
   Selector = 0,
@@ -131,20 +128,35 @@ function SelectActionView({ direction, changeView }: IViewProps) {
 
 function AddLiquidityView({ direction, pool, close }: IViewProps) {
   const [token0Value, setToken0Value] = useState('0')
+
   const [token1Value, setToken1Value] = useState('0')
+
   const [loadingToken0, setLoadingToken0] = useState(false)
+
   const [loadingToken1, setLoadingToken1] = useState(false)
+
   const [loadingApproveToken0, setLoadingApproveToken0] = useState(false)
+
   const [loadingApproveToken1, setLoadingApproveToken1] = useState(false)
+
   const [loadingAddLiquidity, setLoadingAddLiquidity] = useState(false)
+
   const [token0Approved, setToken0Approved] = useState(true)
+
   const [token1Approved, setToken1Approved] = useState(true)
 
+  const { slippage } = useSlippage()
+
   const { tokenBalances, getFormattedTokenBalance } = useTokenBalancesStore()
+
   const { approved, approve } = useERC20Token()
+
   const { address } = useAccount()
+
   const { data: walletClient } = useWalletClient()
+
   const publicClient = usePublicClient()
+
   const { calculateLiquidityCounterAmount, addLiquidity, addLiquidityETH } = useTayaSwapRouter()
 
   const getBalance = useCallback(
@@ -316,14 +328,14 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
           tokenAmount = token0Amount
           ethAmount = token1Amount
         }
-        await addLiquidityETH(token, tokenAmount, ethAmount, SLIPPAGE, address, walletClient, deadline)
+        await addLiquidityETH(token, tokenAmount, ethAmount, slippage, address, walletClient, deadline)
       } else {
         await addLiquidity(
           pool.token0,
           pool.token1,
           token0Amount,
           token1Amount,
-          SLIPPAGE,
+          slippage,
           address,
           walletClient,
           deadline
@@ -337,7 +349,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       )
     }
     setLoadingAddLiquidity(false)
-  }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close])
+  }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close, slippage])
 
   const handleToken0MaxClick = useCallback(() => {
     if (!getFormattedBalance || !pool) return
@@ -469,6 +481,8 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
 
   const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
 
+  const { slippage } = useSlippage()
+
   const [withdrawValue, setWithdrawValue] = useState(50)
 
   const { data: walletClient } = useWalletClient()
@@ -528,7 +542,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
         await removeLiquidityETHWithPermit(
           token,
           poolBalanceWithdraw,
-          SLIPPAGE,
+          slippage,
           address,
           walletClient,
           pool,
@@ -542,7 +556,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
           pool.token0,
           pool.token1,
           poolBalanceWithdraw,
-          SLIPPAGE,
+          slippage,
           address,
           walletClient,
           pool,
@@ -567,7 +581,8 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     poolBalanceWithdraw,
     removeLiquidityETHWithPermit,
     removeLiquidityWithPermit,
-    close
+    close,
+    slippage
   ])
 
   const [loadingSign, setLoadingSign] = useState(false)

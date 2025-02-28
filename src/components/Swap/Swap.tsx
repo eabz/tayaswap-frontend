@@ -11,7 +11,7 @@ import {
 } from '@/constants'
 import { findBestRoute, useColorMode, useERC20Token, useTayaSwapRouter, useWETH } from '@/hooks'
 import { type ITokenListToken, usePools } from '@/services'
-import { useTokenBalancesStore } from '@/stores'
+import { useSlippage, useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import { Box, HStack, IconButton, VStack } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -21,9 +21,6 @@ import { SubmitButton } from '../Buttons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
 import { TokenSelectorModal } from '../Modals'
 import { SwapToken } from './SwapToken'
-
-// TODO: Change to a global state
-const SLIPPAGE = 1
 
 const DEFAULT_INITIAL_TOKEN_0: ITokenListToken = {
   address: zeroAddress,
@@ -45,13 +42,22 @@ const DEFAULT_INITIAL_TOKEN_1: ITokenListToken = {
 
 export function Swap() {
   const { colorMode } = useColorMode()
+
   const { data: pools } = usePools()
+
   const { address } = useAccount()
+
   const { refetch: refetchNativeTokenBalance } = useBalance({ address })
+
   const { data: walletClient } = useWalletClient()
+
   const publicClient = usePublicClient()
+
   const { reloadTokenBalances, updateTokenBalance } = useTokenBalancesStore()
+
   const { wrap, unwrap } = useWETH()
+
+  const { slippage } = useSlippage()
 
   const [token0, setToken0] = useState<ITokenListToken>(DEFAULT_INITIAL_TOKEN_0)
   const [loadingToken0Value, setLoadingToken0Value] = useState(false)
@@ -120,7 +126,7 @@ export function Swap() {
             token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
             token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
             pools,
-            SLIPPAGE
+            slippage
           )
           const formattedOutput = formatTokenBalance(routeResult.output, token1.decimals)
           setToken1Value(formattedOutput)
@@ -130,7 +136,7 @@ export function Swap() {
       }
       setLoadingToken1Value(false)
     },
-    [token0, token1, pools, publicClient, address, checkApproved]
+    [token0, token1, pools, publicClient, address, checkApproved, slippage]
   )
 
   const handleToken1InputChange = useCallback(
@@ -151,7 +157,7 @@ export function Swap() {
             token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
             token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
             pools,
-            SLIPPAGE
+            slippage
           )
           const formattedOutput = formatTokenBalance(routeResult.output, token0.decimals)
           setToken0Value(formattedOutput)
@@ -161,7 +167,7 @@ export function Swap() {
       }
       setLoadingToken0Value(false)
     },
-    [token0, token1, pools, publicClient]
+    [token0, token1, pools, publicClient, slippage]
   )
 
   useEffect(() => {
@@ -258,7 +264,7 @@ export function Swap() {
       token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
       token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
       pools,
-      SLIPPAGE
+      slippage
     )
     if (!route || route.length === 0) {
       console.error(ERROR_ROUTE(token0.address, token1.address))
@@ -301,7 +307,8 @@ export function Swap() {
     swapExactTokensForETH,
     swapExactTokensForTokens,
     handleWrap,
-    handleUnwrap
+    handleUnwrap,
+    slippage
   ])
 
   const handleTokenSelect = useCallback(
