@@ -1,4 +1,4 @@
-import { ROUTER_ADDRESS } from '@/constants'
+import { ERROR_TOKEN_POOL, ROUTER_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
 import type { IPairData, IPairTokenData } from '@/services'
 import { ROUTER_ABI } from '@/utils'
@@ -215,7 +215,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     } else if (inputToken === pool.token1.id) {
       idealCounter = (inputAmount * reserve0 + reserve1 - 1n) / reserve1
     } else {
-      throw new Error('Input token is not part of this pool')
+      throw new Error(ERROR_TOKEN_POOL(inputToken, pool.id))
     }
 
     return idealCounter
@@ -282,7 +282,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
       expectedTokenAmount = (liquidity * reserve1) / totalSupply
       expectedETHAmount = (liquidity * reserve0) / totalSupply
     } else {
-      throw new Error('Token is not part of this pool')
+      throw new Error(ERROR_TOKEN_POOL(token.id, pool.id))
     }
 
     const minTokenAmount = (expectedTokenAmount * BigInt(100 - slippage)) / 100n
