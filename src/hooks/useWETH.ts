@@ -1,7 +1,8 @@
+import { SWAP_TOASTER } from '@/components'
 import { WETH_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
 import { WETH_ABI } from '@/utils'
-import type { Account, WalletClient } from 'viem'
+import { type Account, type WalletClient, formatUnits } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 
 interface IWeth {
@@ -20,7 +21,13 @@ export function useWETH(): IWeth {
       account: client.account as Account
     })
 
-    await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
+    const parsed = formatUnits(amountETH, 18)
+
+    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+      success: { title: `Wrapped ${parsed} TMON` },
+      loading: { title: `Wrapping ${parsed} TMON` },
+      error: { title: 'Unable to wrap TMON' }
+    })
   }
 
   const unwrap = async (amountWETH: bigint, client: WalletClient): Promise<void> => {
@@ -33,7 +40,13 @@ export function useWETH(): IWeth {
       account: client.account as Account
     })
 
-    await waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx })
+    const parsed = formatUnits(amountWETH, 18)
+
+    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+      success: { title: `Unwrapping ${parsed} WMON` },
+      loading: { title: `unwrapped ${parsed} WMON` },
+      error: { title: 'Unable to unwrap WMON' }
+    })
   }
 
   return { wrap, unwrap }

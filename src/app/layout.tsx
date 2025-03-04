@@ -1,4 +1,4 @@
-import { Header, Sidebar } from '@/components'
+import { Header, Sidebar, SwapToaster } from '@/components'
 import { HEADER_HEIGHT, SIDEBAR_WIDTH } from '@/constants'
 import { StateProvider, ThemeProvider, WalletProvider } from '@/providers'
 import { Box } from '@chakra-ui/react'
@@ -66,6 +66,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <main style={{ position: 'relative', overflowX: 'hidden' }}>
                 <Header />
                 <Sidebar />
+                <SwapToaster />
                 <Box
                   background="background"
                   ml={{ base: 0, lg: SIDEBAR_WIDTH }}

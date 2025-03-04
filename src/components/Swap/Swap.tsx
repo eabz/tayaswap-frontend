@@ -9,7 +9,7 @@ import {
   ERROR_WRAP,
   WETH_ADDRESS
 } from '@/constants'
-import { findBestRoute, useColorMode, useERC20Token, useTayaSwapRouter, useWETH } from '@/hooks'
+import { useColorMode, useERC20Token, useTayaSwapRouter, useWETH } from '@/hooks'
 import { type ITokenListToken, usePools } from '@/services'
 import { useSlippage, useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
@@ -67,12 +67,11 @@ export function Swap() {
   const [loadingToken1Value, setLoadingToken1Value] = useState(false)
   const [token1Value, setToken1Value] = useState('0')
 
-  const [actionLoading, setActionLoading] = useState(false)
   const [tokenSelectorDirection, setTokenSelectorDirection] = useState<'from' | 'to' | undefined>(undefined)
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
 
   const { approved, approve } = useERC20Token()
-  const { swapExactETHForTokens, swapExactTokensForETH, swapExactTokensForTokens } = useTayaSwapRouter()
+  const { swapExactETHForTokens, swapExactTokensForETH, swapExactTokensForTokens, findBestRoute } = useTayaSwapRouter()
 
   const checkApproved = useCallback(
     async (tokenAddress: string, inputAmount: bigint) => {
@@ -126,7 +125,8 @@ export function Swap() {
             token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
             token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
             pools,
-            slippage
+            slippage,
+            publicClient
           )
           const formattedOutput = formatTokenBalance(routeResult.output, token1.decimals)
           setToken1Value(formattedOutput)
@@ -136,7 +136,7 @@ export function Swap() {
       }
       setLoadingToken1Value(false)
     },
-    [token0, token1, pools, publicClient, address, checkApproved, slippage]
+    [token0, token1, pools, publicClient, address, checkApproved, slippage, findBestRoute]
   )
 
   const handleToken1InputChange = useCallback(
@@ -157,7 +157,8 @@ export function Swap() {
             token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
             token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
             pools,
-            slippage
+            slippage,
+            publicClient
           )
           const formattedOutput = formatTokenBalance(routeResult.output, token0.decimals)
           setToken0Value(formattedOutput)
@@ -167,7 +168,7 @@ export function Swap() {
       }
       setLoadingToken0Value(false)
     },
-    [token0, token1, pools, publicClient, slippage]
+    [token0, token1, pools, publicClient, slippage, findBestRoute]
   )
 
   useEffect(() => {
@@ -195,7 +196,6 @@ export function Swap() {
 
   const handleApprove = useCallback(async () => {
     if (!address || !walletClient) return
-    setActionLoading(true)
     const inputAmount = parseUnits(token0Value, token0.decimals)
     try {
       await approve(token0.address, inputAmount, walletClient)
@@ -203,19 +203,19 @@ export function Swap() {
     } catch (err) {
       console.error(ERROR_APPROVE(token0.address, inputAmount.toString(), err))
     }
-    setActionLoading(false)
   }, [address, walletClient, token0.address, token0Value, token0.decimals, approve])
 
   const handleWrap = useCallback(async () => {
     if (!walletClient || !address) return
     const amount = parseUnits(token0Value, token0.decimals)
-    setActionLoading(true)
+
     try {
       await wrap(amount, walletClient)
       setToken1Value(token0Value)
     } catch (err) {
       console.error(ERROR_WRAP(err))
     }
+
     await reloadTokenBalances(address, [
       { address: token0.address, decimals: token0.decimals },
       { address: token1.address, decimals: token1.decimals }
@@ -224,7 +224,6 @@ export function Swap() {
     if (data) {
       updateTokenBalance(zeroAddress, data.value, data.decimals)
     }
-    setActionLoading(false)
   }, [
     walletClient,
     address,
@@ -240,7 +239,7 @@ export function Swap() {
   const handleUnwrap = useCallback(async () => {
     if (!walletClient || !address) return
     const amount = parseUnits(token0Value, token0.decimals)
-    setActionLoading(true)
+
     try {
       await unwrap(amount, walletClient)
       setToken1Value(token0Value)
@@ -252,23 +251,23 @@ export function Swap() {
       { address: token1.address, decimals: token1.decimals }
     ])
     await refetchNativeTokenBalance()
-    setActionLoading(false)
   }, [walletClient, address, token0Value, token0, token1, unwrap, reloadTokenBalances, refetchNativeTokenBalance])
 
   const handleSwap = useCallback(async () => {
     if (!address || !walletClient || !publicClient || !pools) return
     const inputAmount = parseUnits(token0Value, token0.decimals)
-    setActionLoading(true)
+
     const { route } = await findBestRoute(
       inputAmount,
       token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
       token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
       pools,
-      slippage
+      slippage,
+      publicClient
     )
     if (!route || route.length === 0) {
       console.error(ERROR_ROUTE(token0.address, token1.address))
-      setActionLoading(false)
+
       return
     }
     const amountOutMin = parseUnits(token1Value, token1.decimals)
@@ -279,11 +278,20 @@ export function Swap() {
       } else if (token1.address === zeroAddress && token0.address === WETH_ADDRESS) {
         await handleUnwrap()
       } else if (token0.address === zeroAddress) {
-        await swapExactETHForTokens(amountOutMin, route, address, walletClient, deadline, inputAmount)
+        await swapExactETHForTokens(amountOutMin, route, address, walletClient, deadline, inputAmount, token1)
       } else if (token1.address === zeroAddress) {
-        await swapExactTokensForETH(inputAmount, amountOutMin, route, address, walletClient, deadline)
+        await swapExactTokensForETH(inputAmount, amountOutMin, route, address, walletClient, deadline, token0)
       } else {
-        await swapExactTokensForTokens(inputAmount, amountOutMin, route, address, walletClient, deadline)
+        await swapExactTokensForTokens(
+          inputAmount,
+          amountOutMin,
+          route,
+          address,
+          walletClient,
+          deadline,
+          token0,
+          token1
+        )
       }
     } catch (err) {
       console.error(ERROR_SWAP(token0.address, token0Value, token1.address, token1Value, err))
@@ -292,7 +300,6 @@ export function Swap() {
       { address: token0.address, decimals: token0.decimals },
       { address: token1.address, decimals: token1.decimals }
     ])
-    setActionLoading(false)
   }, [
     address,
     walletClient,
@@ -308,7 +315,8 @@ export function Swap() {
     swapExactTokensForTokens,
     handleWrap,
     handleUnwrap,
-    slippage
+    slippage,
+    findBestRoute
   ])
 
   const handleTokenSelect = useCallback(
@@ -407,6 +415,7 @@ export function Swap() {
               <ArrowUpArrowDownIcon height="24px" width="24px" color="text-contrast" />
             </IconButton>
           </HStack>
+
           <SwapToken
             direction="to"
             tokenAddress={token1.address}
@@ -416,10 +425,11 @@ export function Swap() {
             inputValue={token1Value}
             loading={loadingToken1Value}
           />
+
           <SubmitButton
             mt="15px"
             text={buttonText}
-            loading={actionLoading}
+            loading={false}
             onClickHandler={buttonHandler()}
             disabled={token0Value === '0' || token1Value === '0'}
             width="full"
