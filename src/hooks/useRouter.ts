@@ -12,7 +12,6 @@ interface ITayaSwapRouter {
     tokenIn: string,
     tokenOut: string,
     pools: IPairData[],
-    slippage: number,
     client: PublicClient
   ): Promise<{ route: string[]; output: bigint }>
   calculateLiquidityCounterAmount: (inputAmount: bigint, inputToken: string, pool: IPairData) => bigint
@@ -220,10 +219,9 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     tokenIn: string,
     tokenOut: string,
     pools: IPairData[],
-    slippage: number,
     client: PublicClient
-  ): Promise<{ route: string[]; output: bigint }> {
-    if (inputAmount === 0n) return { route: [], output: 0n }
+  ): Promise<{ route: string[]; output: bigint; priceImpact: number }> {
+    if (inputAmount === 0n) return { route: [], output: 0n, priceImpact: 0 }
 
     function existsPool(tokenA: string, tokenB: string): boolean {
       for (let i = 0; i < pools.length; i++) {
@@ -287,7 +285,6 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
 
     for (const route of routes) {
       let amount = inputAmount
-
       let valid = true
 
       for (let i = 0; i < route.length - 1; i++) {
@@ -313,9 +310,33 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
       }
     }
 
-    const minOutput = (bestOutput * BigInt(100 - slippage)) / 100n
+    let idealOutput = inputAmount
 
-    return { route: bestRoute, output: minOutput }
+    for (let i = 0; i < bestRoute.length - 1; i++) {
+      const pool = getPool(bestRoute[i], bestRoute[i + 1])
+      if (!pool) continue
+
+      let reserveIn: bigint
+      let reserveOut: bigint
+
+      if (bestRoute[i].toLowerCase() === pool.token0.id.toLowerCase()) {
+        reserveIn = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+        reserveOut = parseUnits(pool.reserve1, Number(pool.token1.decimals))
+      } else {
+        reserveIn = parseUnits(pool.reserve1, Number(pool.token1.decimals))
+        reserveOut = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+      }
+
+      idealOutput = (idealOutput * reserveOut) / reserveIn
+    }
+
+    const priceImpact = idealOutput > 0n ? Number(idealOutput - bestOutput) / Number(idealOutput) : 0
+
+    const totalSlippageBips = Math.floor(priceImpact * 10000)
+
+    const minOutput = (bestOutput * BigInt(10000 - totalSlippageBips)) / 10000n
+
+    return { route: bestRoute, output: minOutput, priceImpact }
   }
 
   const addLiquidity = async (

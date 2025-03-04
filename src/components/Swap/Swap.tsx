@@ -11,7 +11,7 @@ import {
 } from '@/constants'
 import { useColorMode, useERC20Token, useTayaSwapRouter, useWETH } from '@/hooks'
 import { type ITokenListToken, usePools } from '@/services'
-import { useSlippage, useTokenBalancesStore } from '@/stores'
+import { useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import { Box, HStack, IconButton, Text, VStack } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -56,8 +56,6 @@ export function Swap() {
   const { tokenBalances, reloadTokenBalances, updateTokenBalance } = useTokenBalancesStore()
 
   const { wrap, unwrap } = useWETH()
-
-  const { slippage } = useSlippage()
 
   const [token0, setToken0] = useState<ITokenListToken>(DEFAULT_INITIAL_TOKEN_0)
   const [loadingToken0Value, setLoadingToken0Value] = useState(false)
@@ -127,6 +125,7 @@ export function Swap() {
     async (value: string) => {
       setLoadingToken1Value(true)
       setToken0Value(value)
+
       try {
         if (!pools || !publicClient || !address) return
         const inputAmount = parseUnits(value, token0.decimals)
@@ -141,15 +140,14 @@ export function Swap() {
         ) {
           setToken1Value(value)
         } else {
-          const routeResult = await findBestRoute(
+          const { output } = await findBestRoute(
             inputAmount,
             token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
             token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
             pools,
-            slippage,
             publicClient
           )
-          const formattedOutput = formatTokenBalance(routeResult.output, token1.decimals)
+          const formattedOutput = formatTokenBalance(output, token1.decimals)
           setToken1Value(formattedOutput)
         }
       } catch (err) {
@@ -157,7 +155,7 @@ export function Swap() {
       }
       setLoadingToken1Value(false)
     },
-    [token0, token1, pools, publicClient, address, checkApproved, slippage, findBestRoute]
+    [token0, token1, pools, publicClient, address, checkApproved, findBestRoute]
   )
 
   const handleToken1InputChange = useCallback(
@@ -173,15 +171,14 @@ export function Swap() {
         ) {
           setToken0Value(value)
         } else {
-          const routeResult = await findBestRoute(
+          const { output } = await findBestRoute(
             inputAmount,
             token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
             token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
             pools,
-            slippage,
             publicClient
           )
-          const formattedOutput = formatTokenBalance(routeResult.output, token0.decimals)
+          const formattedOutput = formatTokenBalance(output, token0.decimals)
           setToken0Value(formattedOutput)
         }
       } catch (err) {
@@ -189,7 +186,7 @@ export function Swap() {
       }
       setLoadingToken0Value(false)
     },
-    [token0, token1, pools, publicClient, slippage, findBestRoute]
+    [token0, token1, pools, publicClient, findBestRoute]
   )
 
   useEffect(() => {
@@ -201,19 +198,25 @@ export function Swap() {
     }
   }, [token0, token1, address, pools, reloadTokenBalances])
 
-  const handleSwapClick = useCallback(async () => {
-    if (!address || !publicClient) return
-    setToken0(token1)
-    setToken1(token0)
-    setToken0Value(token1Value)
-    setToken1Value(token0Value)
-    const inputAmount = parseUnits(token0Value, token0.decimals)
-    if (token0.address !== zeroAddress) {
-      await checkApproved(token0.address, inputAmount)
-    } else {
-      setTokenApproved(true)
-    }
-  }, [address, publicClient, checkApproved, token0, token1, token0Value, token1Value])
+  const handleSwapClick = useCallback(
+    async (token0Value: string, token1Value: string) => {
+      if (!address || !publicClient) return
+
+      setToken0(token1)
+      setToken1(token0)
+
+      setToken0Value(token1Value)
+      setToken1Value(token0Value)
+
+      const inputAmount = parseUnits(token0Value, token0.decimals)
+      if (token0.address !== zeroAddress) {
+        await checkApproved(token0.address, inputAmount)
+      } else {
+        setTokenApproved(true)
+      }
+    },
+    [address, publicClient, checkApproved, token0, token1]
+  )
 
   const handleApprove = useCallback(async () => {
     if (!address || !walletClient) return
@@ -283,7 +286,6 @@ export function Swap() {
       token0.address === zeroAddress ? WETH_ADDRESS : token0.address,
       token1.address === zeroAddress ? WETH_ADDRESS : token1.address,
       pools,
-      slippage,
       publicClient
     )
     if (!route || route.length === 0) {
@@ -336,7 +338,6 @@ export function Swap() {
     swapExactTokensForTokens,
     handleWrap,
     handleUnwrap,
-    slippage,
     findBestRoute
   ])
 
@@ -346,31 +347,21 @@ export function Swap() {
         if (token.address === token1.address) {
           return
         }
+
         setToken0(token)
-        if (token0Value !== '0') {
-          handleToken0InputChange(token0Value)
-        }
       }
+
       if (tokenSelectorDirection === 'to') {
         if (token.address === token0.address) {
           return
         }
+
         setToken1(token)
-        if (token1Value !== '0') {
-          handleToken1InputChange(token1Value)
-        }
       }
+
       setTokenSelectorOpen(false)
     },
-    [
-      tokenSelectorDirection,
-      token0.address,
-      token1.address,
-      token0Value,
-      token1Value,
-      handleToken0InputChange,
-      handleToken1InputChange
-    ]
+    [tokenSelectorDirection, token0.address, token1.address]
   )
 
   const conversionMode = useMemo(() => {
@@ -421,7 +412,7 @@ export function Swap() {
           />
           <HStack width="full" justifyContent="center" mt="-4" mb="-4">
             <IconButton
-              onClick={handleSwapClick}
+              onClick={() => handleSwapClick(token0Value, token1Value)}
               color="white"
               size="xl"
               background="swap-token-background"
