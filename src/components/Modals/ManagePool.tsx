@@ -12,7 +12,7 @@ import {
 } from '@/constants'
 import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
 import type { IPairData, IPairTokenData } from '@/services'
-import { useSlippage, useTokenBalancesStore } from '@/stores'
+import { useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import {
   Box,
@@ -144,8 +144,6 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
   const [token0Approved, setToken0Approved] = useState(true)
 
   const [token1Approved, setToken1Approved] = useState(true)
-
-  const { slippage } = useSlippage()
 
   const { tokenBalances, getFormattedTokenBalance } = useTokenBalancesStore()
 
@@ -328,18 +326,9 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
           tokenAmount = token0Amount
           ethAmount = token1Amount
         }
-        await addLiquidityETH(token, tokenAmount, ethAmount, slippage, address, walletClient, deadline)
+        await addLiquidityETH(token, tokenAmount, ethAmount, address, walletClient, deadline)
       } else {
-        await addLiquidity(
-          pool.token0,
-          pool.token1,
-          token0Amount,
-          token1Amount,
-          slippage,
-          address,
-          walletClient,
-          deadline
-        )
+        await addLiquidity(pool.token0, pool.token1, token0Amount, token1Amount, address, walletClient, deadline)
       }
 
       close()
@@ -349,7 +338,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       )
     }
     setLoadingAddLiquidity(false)
-  }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close, slippage])
+  }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close])
 
   const handleToken0MaxClick = useCallback(() => {
     if (!getFormattedBalance || !pool) return
@@ -481,8 +470,6 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
 
   const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
 
-  const { slippage } = useSlippage()
-
   const [withdrawValue, setWithdrawValue] = useState(50)
 
   const { data: walletClient } = useWalletClient()
@@ -542,7 +529,6 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
         await removeLiquidityETHWithPermit(
           token,
           poolBalanceWithdraw,
-          slippage,
           address,
           walletClient,
           pool,
@@ -556,7 +542,6 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
           pool.token0,
           pool.token1,
           poolBalanceWithdraw,
-          slippage,
           address,
           walletClient,
           pool,
@@ -581,8 +566,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     poolBalanceWithdraw,
     removeLiquidityETHWithPermit,
     removeLiquidityWithPermit,
-    close,
-    slippage
+    close
   ])
 
   const [loadingSign, setLoadingSign] = useState(false)

@@ -2,7 +2,7 @@ import { SWAP_TOASTER } from '@/components'
 import { ERROR_TOKEN_POOL, ROUTER_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
 import type { IPairData, IPairTokenData, ITokenListToken } from '@/services'
-import { ROUTER_ABI } from '@/utils'
+import { ROUTER_ABI, calculateMinAmountsForAddLiquidity, calculateMinAmountsForRemoveLiquidity } from '@/utils'
 import { type Account, type PublicClient, type WalletClient, formatUnits, parseUnits } from 'viem'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 
@@ -20,7 +20,6 @@ interface ITayaSwapRouter {
     token0: IPairTokenData,
     token1: IPairTokenData,
     liquidity: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -32,7 +31,6 @@ interface ITayaSwapRouter {
   removeLiquidityETHWithPermit: (
     token: IPairTokenData,
     liquidity: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -46,7 +44,6 @@ interface ITayaSwapRouter {
     token1: IPairTokenData,
     amountADesired: bigint,
     amountBDesired: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     deadline: bigint
@@ -55,7 +52,6 @@ interface ITayaSwapRouter {
     token: IPairTokenData,
     amountTokenDesired: bigint,
     amountETHDesired: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     deadline: bigint
@@ -90,6 +86,8 @@ interface ITayaSwapRouter {
   ) => Promise<void>
 }
 
+const SLIPPAGE_TOLERANCE = 0.005
+
 export function useTayaSwapRouter(): ITayaSwapRouter {
   const calculateLiquidityCounterAmount = (inputAmount: bigint, inputToken: string, pool: IPairData): bigint => {
     if (inputAmount === 0n) return 0n
@@ -114,7 +112,6 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     token0: IPairTokenData,
     token1: IPairTokenData,
     liquidity: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -123,26 +120,18 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     s: string,
     deadline: bigint
   ): Promise<void> => {
-    const totalSupply = parseUnits(pool.totalSupply, 18)
-    const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
-    const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
-
-    const expectedAmount0 = (liquidity * reserve0) / totalSupply
-    const expectedAmount1 = (liquidity * reserve1) / totalSupply
-
-    const minAmount0 = (expectedAmount0 * BigInt(100 - slippage)) / 100n
-    const minAmount1 = (expectedAmount1 * BigInt(100 - slippage)) / 100n
+    const { minAmountA, minAmountB } = calculateMinAmountsForRemoveLiquidity(liquidity, pool, SLIPPAGE_TOLERANCE)
 
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
       abi: ROUTER_ABI,
       functionName: 'removeLiquidityWithPermit',
-      args: [token0.id, token1.id, liquidity, minAmount0, minAmount1, toAddress, deadline, false, v, r, s],
+      args: [token0.id, token1.id, liquidity, minAmountA, minAmountB, toAddress, deadline, false, v, r, s],
       chain: client.chain,
       account: client.account as Account
     })
 
-    const formatted = parseUnits(liquidity.toString(), 18)
+    const formatted = formatUnits(liquidity, 18)
 
     SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
       success: { title: `Withdrawn ${formatted} from pool` },
@@ -154,7 +143,6 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
   const removeLiquidityETHWithPermit = async (
     token: IPairTokenData,
     liquidity: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -163,36 +151,18 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     s: string,
     deadline: bigint
   ): Promise<void> => {
-    const totalSupply = parseUnits(pool.totalSupply, 18)
-    const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
-    const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
-
-    let expectedTokenAmount: bigint
-    let expectedETHAmount: bigint
-
-    if (token.id === pool.token0.id) {
-      expectedTokenAmount = (liquidity * reserve0) / totalSupply
-      expectedETHAmount = (liquidity * reserve1) / totalSupply
-    } else if (token.id === pool.token1.id) {
-      expectedTokenAmount = (liquidity * reserve1) / totalSupply
-      expectedETHAmount = (liquidity * reserve0) / totalSupply
-    } else {
-      throw new Error(ERROR_TOKEN_POOL(token.id, pool.id))
-    }
-
-    const minTokenAmount = (expectedTokenAmount * BigInt(100 - slippage)) / 100n
-    const minETHAmount = (expectedETHAmount * BigInt(100 - slippage)) / 100n
+    const { minAmountA, minAmountB } = calculateMinAmountsForRemoveLiquidity(liquidity, pool, SLIPPAGE_TOLERANCE)
 
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
       abi: ROUTER_ABI,
       functionName: 'removeLiquidityETHWithPermit',
-      args: [token.id, liquidity, minTokenAmount, minETHAmount, toAddress, deadline, false, v, r, s],
+      args: [token.id, liquidity, minAmountA, minAmountB, toAddress, deadline, false, v, r, s],
       chain: client.chain,
       account: client.account as Account
     })
 
-    const formatted = parseUnits(liquidity.toString(), 18)
+    const formatted = formatUnits(liquidity, 18)
 
     SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
       success: { title: `Withdrawn ${formatted} from pool` },
@@ -344,13 +314,15 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     token1: IPairTokenData,
     amountADesired: bigint,
     amountBDesired: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     deadline: bigint
   ): Promise<void> => {
-    const minAmountA = (amountADesired * BigInt(100 - slippage)) / 100n
-    const minAmountB = (amountBDesired * BigInt(100 - slippage)) / 100n
+    const { minAmountA, minAmountB } = calculateMinAmountsForAddLiquidity(
+      amountADesired,
+      amountBDesired,
+      SLIPPAGE_TOLERANCE
+    )
 
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
@@ -379,13 +351,15 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     token: IPairTokenData,
     amountTokenDesired: bigint,
     amountETHDesired: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     deadline: bigint
   ): Promise<void> => {
-    const minTokenAmount = (amountTokenDesired * BigInt(100 - slippage)) / 100n
-    const minETHAmount = (amountETHDesired * BigInt(100 - slippage)) / 100n
+    const { minAmountA: minTokenAmount, minAmountB: minETHAmount } = calculateMinAmountsForAddLiquidity(
+      amountTokenDesired,
+      amountETHDesired,
+      SLIPPAGE_TOLERANCE
+    )
 
     const tx = await client.writeContract({
       address: ROUTER_ADDRESS,
