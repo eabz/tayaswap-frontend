@@ -6,11 +6,7 @@ import { useSidebarStore } from '@/stores'
 import {
   Box,
   Button,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerRoot,
+  Drawer,
   DrawerTitle,
   HStack,
   IconButton,
@@ -100,14 +96,20 @@ export function Sidebar() {
 
   return (
     <Box h="100dvh" width={SIDEBAR_WIDTH} position="absolute" top="0">
-      <DrawerRoot open={mobile ? open : true} placement="start" modal={false}>
-        <DrawerContent
+      <Drawer.Root
+        open={mobile ? open : true}
+        placement="start"
+        modal={!!mobile}
+        onInteractOutside={() => setOpen(false)}
+      >
+        {mobile && <Drawer.Backdrop />}
+        <Drawer.Content
           background="menu-bg"
           h="100dvh"
           boxShadow="none"
           _open={{ animation: mobile ? undefined : 'none' }}
         >
-          <DrawerHeader>
+          <Drawer.Header>
             <DrawerTitle justifyContent="center">
               <HStack justifyContent="space-between">
                 <SideBarLogo />
@@ -118,8 +120,8 @@ export function Sidebar() {
                 </Stack>
               </HStack>
             </DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
+          </Drawer.Header>
+          <Drawer.Body>
             <VStack separator={<StackSeparator />}>
               {MENU_ITEMS.map((item, i) => (
                 <MenuItem
@@ -132,8 +134,8 @@ export function Sidebar() {
                 />
               ))}
             </VStack>
-          </DrawerBody>
-          <DrawerFooter pb={10}>
+          </Drawer.Body>
+          <Drawer.Footer pb={10}>
             <VStack width="full" spaceY={4} separator={<StackSeparator />}>
               <Link href={'https://sublabs.xyz/'} external>
                 <HStack justifyContent="space-between" alignItems="center">
@@ -163,9 +165,9 @@ export function Sidebar() {
                 <ColorModeButton />
               </HStack>
             </VStack>
-          </DrawerFooter>
-        </DrawerContent>
-      </DrawerRoot>
+          </Drawer.Footer>
+        </Drawer.Content>
+      </Drawer.Root>
     </Box>
   )
 }
