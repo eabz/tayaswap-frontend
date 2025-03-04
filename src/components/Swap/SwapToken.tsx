@@ -15,6 +15,7 @@ interface ISwapTokenProps {
   onInputValueChange: (value: string) => void
   inputValue: string
   loading: boolean
+  hasEnough?: boolean
 }
 
 export function SwapToken({
@@ -25,7 +26,8 @@ export function SwapToken({
   onMaxClick,
   onInputValueChange,
   loading,
-  inputValue
+  inputValue,
+  hasEnough = true
 }: ISwapTokenProps) {
   const { address } = useAccount()
 
@@ -46,7 +48,12 @@ export function SwapToken({
             onClickHandler={onTokenSelectorClick}
           />
         </HStack>
-        <SwapTokenAmountInput loading={loading} onChangeHandler={onInputValueChange} inputValue={inputValue} />
+        <SwapTokenAmountInput
+          loading={loading}
+          onChangeHandler={onInputValueChange}
+          inputValue={inputValue}
+          hasEnough={hasEnough}
+        />
         <HStack justifyContent="space-between" width="full" alignItems="center">
           <Text fontWeight="400" fontSize="14px">
             {address ? max ? max : <Spinner /> : '0'}

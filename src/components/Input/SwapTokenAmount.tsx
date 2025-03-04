@@ -5,12 +5,14 @@ export interface ISwapTokenAmountInputProps {
   loading: boolean
   onChangeHandler: (value: string) => void
   inputValue: string
+  hasEnough: boolean
 }
 
 export function SwapTokenAmountInput({
   inputValue,
   onChangeHandler,
-  loading
+  loading,
+  hasEnough
 }: ISwapTokenAmountInputProps): JSX.Element {
   return loading ? (
     <HStack
@@ -31,7 +33,7 @@ export function SwapTokenAmountInput({
       fontSize="xl"
       pl="20px"
       pr="20px"
-      color="text-contrast"
+      color={hasEnough ? 'text-contrast' : 'red.600'}
       type="number"
       textAlign="left"
       background="input-liquidity-background"

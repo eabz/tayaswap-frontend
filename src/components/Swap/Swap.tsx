@@ -13,7 +13,7 @@ import { useColorMode, useERC20Token, useTayaSwapRouter, useWETH } from '@/hooks
 import { type ITokenListToken, usePools } from '@/services'
 import { useSlippage, useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
-import { Box, HStack, IconButton, VStack } from '@chakra-ui/react'
+import { Box, HStack, IconButton, Text, VStack } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { parseUnits, zeroAddress } from 'viem'
 import { useAccount, useBalance, usePublicClient, useWalletClient } from 'wagmi'
@@ -53,7 +53,7 @@ export function Swap() {
 
   const publicClient = usePublicClient()
 
-  const { reloadTokenBalances, updateTokenBalance } = useTokenBalancesStore()
+  const { tokenBalances, reloadTokenBalances, updateTokenBalance } = useTokenBalancesStore()
 
   const { wrap, unwrap } = useWETH()
 
@@ -72,6 +72,27 @@ export function Swap() {
 
   const { approved, approve } = useERC20Token()
   const { swapExactETHForTokens, swapExactTokensForETH, swapExactTokensForTokens, findBestRoute } = useTayaSwapRouter()
+
+  const getBalance = useCallback(
+    (tokenAddress: string): bigint => {
+      return tokenAddress === WETH_ADDRESS
+        ? tokenBalances[zeroAddress]?.balance || 0n
+        : tokenBalances[tokenAddress]?.balance || 0n
+    },
+    [tokenBalances]
+  )
+
+  const token0Balance: bigint = getBalance(token0.address)
+
+  const token0ValueBigInt = useMemo(() => {
+    try {
+      return parseUnits(token0Value, Number(token0.decimals))
+    } catch {
+      return 0n
+    }
+  }, [token0Value, token0.decimals])
+
+  const hasSufficientToken0 = token0ValueBigInt <= token0Balance
 
   const checkApproved = useCallback(
     async (tokenAddress: string, inputAmount: bigint) => {
@@ -379,7 +400,7 @@ export function Swap() {
       />
       <Box
         width={{ base: '350px', lg: '430px' }}
-        height="475px"
+        height="500px"
         boxShadow="md"
         borderRadius="25px"
         border="2px solid"
@@ -387,11 +408,6 @@ export function Swap() {
         bgImage={colorMode === 'dark' ? 'linear-gradient(#070E2B, #132E7F)' : 'linear-gradient(#142E78, #4762B9)'}
       >
         <VStack width="full" height="full" px="30px" py="50px">
-          {/* <HStack justifyContent="end" width="full" py="3">
-            <IconButton variant="ghost" color="white" _hover={{ background: 'none' }}>
-              <GearIcon />
-            </IconButton>
-          </HStack> */}
           <SwapToken
             direction="from"
             tokenAddress={token0.address}
@@ -401,6 +417,7 @@ export function Swap() {
             onTokenSelectorClick={() => handleTokenSelectorOpen('from')}
             inputValue={token0Value}
             loading={loadingToken0Value}
+            hasEnough={hasSufficientToken0}
           />
           <HStack width="full" justifyContent="center" mt="-4" mb="-4">
             <IconButton
@@ -426,12 +443,20 @@ export function Swap() {
             loading={loadingToken1Value}
           />
 
+          <VStack pt="5">
+            {!hasSufficientToken0 && (
+              <Text color="red.600" fontSize="sm">
+                Not enough {token0.symbol} balance.
+              </Text>
+            )}
+          </VStack>
+
           <SubmitButton
             mt="15px"
             text={buttonText}
             loading={false}
             onClickHandler={buttonHandler()}
-            disabled={token0Value === '0' || token1Value === '0'}
+            disabled={token0Value === '0' || token1Value === '0' || !hasSufficientToken0}
             width="full"
           />
         </VStack>
