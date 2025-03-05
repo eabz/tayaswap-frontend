@@ -12,7 +12,7 @@ import {
 } from '@/constants'
 import { useERC20Token, usePermitSignature, useTayaSwapRouter } from '@/hooks'
 import type { IPairData, IPairTokenData } from '@/services'
-import { useSlippage, useTokenBalancesStore } from '@/stores'
+import { useTokenBalancesStore } from '@/stores'
 import { formatTokenBalance } from '@/utils'
 import {
   Box,
@@ -144,8 +144,6 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
   const [token0Approved, setToken0Approved] = useState(true)
 
   const [token1Approved, setToken1Approved] = useState(true)
-
-  const { slippage } = useSlippage()
 
   const { tokenBalances, getFormattedTokenBalance } = useTokenBalancesStore()
 
@@ -328,18 +326,9 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
           tokenAmount = token0Amount
           ethAmount = token1Amount
         }
-        await addLiquidityETH(token, tokenAmount, ethAmount, slippage, address, walletClient, deadline)
+        await addLiquidityETH(token, tokenAmount, ethAmount, address, walletClient, deadline)
       } else {
-        await addLiquidity(
-          pool.token0,
-          pool.token1,
-          token0Amount,
-          token1Amount,
-          slippage,
-          address,
-          walletClient,
-          deadline
-        )
+        await addLiquidity(pool.token0, pool.token1, token0Amount, token1Amount, address, walletClient, deadline)
       }
 
       close()
@@ -349,7 +338,7 @@ function AddLiquidityView({ direction, pool, close }: IViewProps) {
       )
     }
     setLoadingAddLiquidity(false)
-  }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close, slippage])
+  }, [walletClient, address, token0Value, token1Value, pool, addLiquidity, addLiquidityETH, close])
 
   const handleToken0MaxClick = useCallback(() => {
     if (!getFormattedBalance || !pool) return
@@ -481,8 +470,6 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
 
   const { poolBalances, getFormattedPoolBalance } = useTokenBalancesStore()
 
-  const { slippage } = useSlippage()
-
   const [withdrawValue, setWithdrawValue] = useState(50)
 
   const { data: walletClient } = useWalletClient()
@@ -528,12 +515,8 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     return (poolBalances[pool.id].balance * BigInt(withdrawValue)) / 100n
   }, [poolBalances, withdrawValue, pool.id])
 
-  const [loadingWithdrawal, setLoadingWithdrawal] = useState(false)
-
   const handleWithdraw = useCallback(async () => {
     if (!address || !walletClient || !signature || !signature.v) return
-
-    setLoadingWithdrawal(true)
 
     try {
       if (pool.token0.id === WETH_ADDRESS || pool.token1.id === WETH_ADDRESS) {
@@ -542,7 +525,6 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
         await removeLiquidityETHWithPermit(
           token,
           poolBalanceWithdraw,
-          slippage,
           address,
           walletClient,
           pool,
@@ -556,7 +538,6 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
           pool.token0,
           pool.token1,
           poolBalanceWithdraw,
-          slippage,
           address,
           walletClient,
           pool,
@@ -571,8 +552,6 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     } catch (err) {
       console.error(ERROR_WITHDRAWAL(poolBalanceWithdraw.toString(), pool.token0.id, pool.token1.id, err))
     }
-
-    setLoadingWithdrawal(false)
   }, [
     address,
     walletClient,
@@ -581,8 +560,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
     poolBalanceWithdraw,
     removeLiquidityETHWithPermit,
     removeLiquidityWithPermit,
-    close,
-    slippage
+    close
   ])
 
   const [loadingSign, setLoadingSign] = useState(false)
@@ -706,7 +684,7 @@ function RemoveLiquidityView({ direction, pool, close }: IViewProps) {
           <SubmitButton
             onClickHandler={handleWithdraw}
             text={'Withdraw'}
-            loading={loadingWithdrawal}
+            loading={false}
             disabled={!signature || amount0Withdraw === 0n || amount1Withdraw === 0n}
             width="full"
             px="5"

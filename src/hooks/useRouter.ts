@@ -1,5 +1,5 @@
 import { SWAP_TOASTER } from '@/components'
-import { ERROR_TOKEN_POOL, ROUTER_ADDRESS } from '@/constants'
+import { ERROR_TOKEN_POOL, HARDCODED_LIQUIDITY_SLIPAGE, ROUTER_ADDRESS } from '@/constants'
 import { WAGMI_CONFIG } from '@/providers'
 import type { IPairData, IPairTokenData, ITokenListToken } from '@/services'
 import { ROUTER_ABI } from '@/utils'
@@ -20,7 +20,6 @@ interface ITayaSwapRouter {
     token0: IPairTokenData,
     token1: IPairTokenData,
     liquidity: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -32,7 +31,6 @@ interface ITayaSwapRouter {
   removeLiquidityETHWithPermit: (
     token: IPairTokenData,
     liquidity: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -46,7 +44,6 @@ interface ITayaSwapRouter {
     token1: IPairTokenData,
     amountADesired: bigint,
     amountBDesired: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     deadline: bigint
@@ -55,7 +52,6 @@ interface ITayaSwapRouter {
     token: IPairTokenData,
     amountTokenDesired: bigint,
     amountETHDesired: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     deadline: bigint
@@ -114,7 +110,6 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     token0: IPairTokenData,
     token1: IPairTokenData,
     liquidity: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -123,38 +118,42 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     s: string,
     deadline: bigint
   ): Promise<void> => {
-    const totalSupply = parseUnits(pool.totalSupply, 18)
-    const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
-    const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
+    return new Promise((resolve) => {
+      const totalSupply = parseUnits(pool.totalSupply, 18)
+      const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+      const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
 
-    const expectedAmount0 = (liquidity * reserve0) / totalSupply
-    const expectedAmount1 = (liquidity * reserve1) / totalSupply
+      const expectedAmount0 = (liquidity * reserve0) / totalSupply
+      const expectedAmount1 = (liquidity * reserve1) / totalSupply
 
-    const minAmount0 = (expectedAmount0 * BigInt(100 - slippage)) / 100n
-    const minAmount1 = (expectedAmount1 * BigInt(100 - slippage)) / 100n
+      const minAmount0 = (expectedAmount0 * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
+      const minAmount1 = (expectedAmount1 * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
 
-    const tx = await client.writeContract({
-      address: ROUTER_ADDRESS,
-      abi: ROUTER_ABI,
-      functionName: 'removeLiquidityWithPermit',
-      args: [token0.id, token1.id, liquidity, minAmount0, minAmount1, toAddress, deadline, false, v, r, s],
-      chain: client.chain,
-      account: client.account as Account
-    })
+      client
+        .writeContract({
+          address: ROUTER_ADDRESS,
+          abi: ROUTER_ABI,
+          functionName: 'removeLiquidityWithPermit',
+          args: [token0.id, token1.id, liquidity, minAmount0, minAmount1, toAddress, deadline, false, v, r, s],
+          chain: client.chain,
+          account: client.account as Account
+        })
+        .then((tx) => {
+          const formatted = parseUnits(liquidity.toString(), 18)
 
-    const formatted = parseUnits(liquidity.toString(), 18)
-
-    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
-      success: { title: `Withdrawn ${formatted} from pool` },
-      loading: { title: `Withdrawing ${formatted} from pool` },
-      error: { title: 'Unable to withdraw tokens from pool' }
+          SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+            success: { title: `Withdrawn ${formatted} from pool` },
+            loading: { title: `Withdrawing ${formatted} from pool` },
+            error: { title: 'Unable to withdraw tokens from pool' },
+            finally: resolve
+          })
+        })
     })
   }
 
   const removeLiquidityETHWithPermit = async (
     token: IPairTokenData,
     liquidity: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     pool: IPairData,
@@ -163,41 +162,46 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     s: string,
     deadline: bigint
   ): Promise<void> => {
-    const totalSupply = parseUnits(pool.totalSupply, 18)
-    const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
-    const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
+    return new Promise((resolve) => {
+      const totalSupply = parseUnits(pool.totalSupply, 18)
+      const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
+      const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
 
-    let expectedTokenAmount: bigint
-    let expectedETHAmount: bigint
+      let expectedTokenAmount: bigint
+      let expectedETHAmount: bigint
 
-    if (token.id === pool.token0.id) {
-      expectedTokenAmount = (liquidity * reserve0) / totalSupply
-      expectedETHAmount = (liquidity * reserve1) / totalSupply
-    } else if (token.id === pool.token1.id) {
-      expectedTokenAmount = (liquidity * reserve1) / totalSupply
-      expectedETHAmount = (liquidity * reserve0) / totalSupply
-    } else {
-      throw new Error(ERROR_TOKEN_POOL(token.id, pool.id))
-    }
+      if (token.id === pool.token0.id) {
+        expectedTokenAmount = (liquidity * reserve0) / totalSupply
+        expectedETHAmount = (liquidity * reserve1) / totalSupply
+      } else if (token.id === pool.token1.id) {
+        expectedTokenAmount = (liquidity * reserve1) / totalSupply
+        expectedETHAmount = (liquidity * reserve0) / totalSupply
+      } else {
+        throw new Error(ERROR_TOKEN_POOL(token.id, pool.id))
+      }
 
-    const minTokenAmount = (expectedTokenAmount * BigInt(100 - slippage)) / 100n
-    const minETHAmount = (expectedETHAmount * BigInt(100 - slippage)) / 100n
+      const minTokenAmount = (expectedTokenAmount * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
+      const minETHAmount = (expectedETHAmount * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
 
-    const tx = await client.writeContract({
-      address: ROUTER_ADDRESS,
-      abi: ROUTER_ABI,
-      functionName: 'removeLiquidityETHWithPermit',
-      args: [token.id, liquidity, minTokenAmount, minETHAmount, toAddress, deadline, false, v, r, s],
-      chain: client.chain,
-      account: client.account as Account
-    })
+      client
+        .writeContract({
+          address: ROUTER_ADDRESS,
+          abi: ROUTER_ABI,
+          functionName: 'removeLiquidityETHWithPermit',
+          args: [token.id, liquidity, minTokenAmount, minETHAmount, toAddress, deadline, false, v, r, s],
+          chain: client.chain,
+          account: client.account as Account
+        })
+        .then((tx) => {
+          const formatted = parseUnits(liquidity.toString(), 18)
 
-    const formatted = parseUnits(liquidity.toString(), 18)
-
-    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
-      success: { title: `Withdrawn ${formatted} from pool` },
-      loading: { title: `Withdrawing ${formatted} from pool` },
-      error: { title: 'Unable to withdraw tokens from pool' }
+          SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+            success: { title: `Withdrawn ${formatted} from pool` },
+            loading: { title: `Withdrawing ${formatted} from pool` },
+            error: { title: 'Unable to withdraw tokens from pool' },
+            finally: resolve
+          })
+        })
     })
   }
 
@@ -344,34 +348,38 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     token1: IPairTokenData,
     amountADesired: bigint,
     amountBDesired: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     deadline: bigint
   ): Promise<void> => {
-    const minAmountA = (amountADesired * BigInt(100 - slippage)) / 100n
-    const minAmountB = (amountBDesired * BigInt(100 - slippage)) / 100n
+    return new Promise((resolve) => {
+      const minAmountA = (amountADesired * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
+      const minAmountB = (amountBDesired * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
 
-    const tx = await client.writeContract({
-      address: ROUTER_ADDRESS,
-      abi: ROUTER_ABI,
-      functionName: 'addLiquidity',
-      args: [token0.id, token1.id, amountADesired, amountBDesired, minAmountA, minAmountB, toAddress, deadline],
-      chain: client.chain,
-      account: client.account as Account
-    })
+      client
+        .writeContract({
+          address: ROUTER_ADDRESS,
+          abi: ROUTER_ABI,
+          functionName: 'addLiquidity',
+          args: [token0.id, token1.id, amountADesired, amountBDesired, minAmountA, minAmountB, toAddress, deadline],
+          chain: client.chain,
+          account: client.account as Account
+        })
+        .then((tx) => {
+          const token1Formatted = formatUnits(amountADesired, Number(token0.decimals))
+          const token0Formatted = formatUnits(amountBDesired, Number(token1.decimals))
 
-    const token1Formatted = formatUnits(amountADesired, Number(token0.decimals))
-    const token0Formatted = formatUnits(amountBDesired, Number(token1.decimals))
-
-    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
-      success: {
-        title: `Added ${token0Formatted} ${token0.symbol} and ${token1Formatted} ${token1.symbol} to the pool`
-      },
-      loading: {
-        title: `Adding ${token0Formatted} ${token0.symbol} and ${token1Formatted} ${token1.symbol} to the pool`
-      },
-      error: { title: 'Unable to add tokens to the pool' }
+          SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+            success: {
+              title: `Added ${token0Formatted} ${token0.symbol} and ${token1Formatted} ${token1.symbol} to the pool`
+            },
+            loading: {
+              title: `Adding ${token0Formatted} ${token0.symbol} and ${token1Formatted} ${token1.symbol} to the pool`
+            },
+            error: { title: 'Unable to add tokens to the pool' },
+            finally: resolve
+          })
+        })
     })
   }
 
@@ -379,35 +387,39 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     token: IPairTokenData,
     amountTokenDesired: bigint,
     amountETHDesired: bigint,
-    slippage: number,
     toAddress: string,
     client: WalletClient,
     deadline: bigint
   ): Promise<void> => {
-    const minTokenAmount = (amountTokenDesired * BigInt(100 - slippage)) / 100n
-    const minETHAmount = (amountETHDesired * BigInt(100 - slippage)) / 100n
+    return new Promise((resolve) => {
+      const minTokenAmount = (amountTokenDesired * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
+      const minETHAmount = (amountETHDesired * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
 
-    const tx = await client.writeContract({
-      address: ROUTER_ADDRESS,
-      abi: ROUTER_ABI,
-      functionName: 'addLiquidityETH',
-      args: [token.id, amountTokenDesired, minTokenAmount, minETHAmount, toAddress, deadline],
-      chain: client.chain,
-      account: client.account as Account,
-      value: amountETHDesired
-    })
+      client
+        .writeContract({
+          address: ROUTER_ADDRESS,
+          abi: ROUTER_ABI,
+          functionName: 'addLiquidityETH',
+          args: [token.id, amountTokenDesired, minTokenAmount, minETHAmount, toAddress, deadline],
+          chain: client.chain,
+          account: client.account as Account,
+          value: amountETHDesired
+        })
+        .then((tx) => {
+          const tokenAmount = formatUnits(amountTokenDesired, Number(token.decimals))
+          const ethAmount = formatUnits(amountETHDesired, 18)
 
-    const tokenAmount = formatUnits(amountTokenDesired, Number(token.decimals))
-    const ethAmount = formatUnits(amountETHDesired, 18)
-
-    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
-      success: {
-        title: `Added ${tokenAmount} ${token.symbol} and ${ethAmount} TMON to the pool`
-      },
-      loading: {
-        title: `Adding ${tokenAmount} ${token.symbol} and ${ethAmount} TMON to the pool`
-      },
-      error: { title: 'Unable to add tokens to the pool' }
+          SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+            success: {
+              title: `Added ${tokenAmount} ${token.symbol} and ${ethAmount} TMON to the pool`
+            },
+            loading: {
+              title: `Adding ${tokenAmount} ${token.symbol} and ${ethAmount} TMON to the pool`
+            },
+            error: { title: 'Unable to add tokens to the pool' },
+            finally: resolve
+          })
+        })
     })
   }
 
@@ -421,29 +433,34 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     tokenFrom: ITokenListToken,
     tokenTo: ITokenListToken
   ): Promise<void> => {
-    const tx = await client.writeContract({
-      address: ROUTER_ADDRESS,
-      abi: ROUTER_ABI,
-      functionName: 'swapExactTokensForTokens',
-      args: [amountIn, amountOutMin, path, toAddress, deadline],
-      chain: client.chain,
-      account: client.account as Account
-    })
+    return new Promise((resolve) => {
+      client
+        .writeContract({
+          address: ROUTER_ADDRESS,
+          abi: ROUTER_ABI,
+          functionName: 'swapExactTokensForTokens',
+          args: [amountIn, amountOutMin, path, toAddress, deadline],
+          chain: client.chain,
+          account: client.account as Account
+        })
+        .then((tx) => {
+          const tokenAmount = formatUnits(amountIn, Number(tokenFrom.decimals))
 
-    const tokenAmount = formatUnits(amountIn, Number(tokenFrom.decimals))
-
-    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
-      success: {
-        title: `Swapped ${tokenAmount} ${tokenFrom.symbol} for ${tokenTo.symbol}`
-      },
-      loading: {
-        title: `Swapping ${tokenAmount} ${tokenFrom.symbol} for ${tokenTo.symbol}`
-      },
-      error: { title: `Unable to swap ${tokenAmount} ${tokenFrom.symbol}` }
+          SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+            success: {
+              title: `Swapped ${tokenAmount} ${tokenFrom.symbol} for ${tokenTo.symbol}`
+            },
+            loading: {
+              title: `Swapping ${tokenAmount} ${tokenFrom.symbol} for ${tokenTo.symbol}`
+            },
+            error: { title: `Unable to swap ${tokenAmount} ${tokenFrom.symbol}` },
+            finally: resolve
+          })
+        })
     })
   }
 
-  const swapExactETHForTokens = async (
+  const swapExactEthForTokens = async (
     amountOutMin: bigint,
     path: string[],
     toAddress: string,
@@ -452,30 +469,35 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     ethAmount: bigint,
     tokenTo: ITokenListToken
   ): Promise<void> => {
-    const tx = await client.writeContract({
-      address: ROUTER_ADDRESS,
-      abi: ROUTER_ABI,
-      functionName: 'swapExactETHForTokens',
-      args: [amountOutMin, path, toAddress, deadline],
-      chain: client.chain,
-      account: client.account as Account,
-      value: ethAmount
-    })
+    return new Promise((resolve) => {
+      client
+        .writeContract({
+          address: ROUTER_ADDRESS,
+          abi: ROUTER_ABI,
+          functionName: 'swapExactETHForTokens',
+          args: [amountOutMin, path, toAddress, deadline],
+          chain: client.chain,
+          account: client.account as Account,
+          value: ethAmount
+        })
+        .then((tx) => {
+          const formattedEthAmount = formatUnits(ethAmount, 18)
 
-    const formattedEthAmount = formatUnits(ethAmount, 18)
-
-    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
-      success: {
-        title: `Swapped ${formattedEthAmount} MON for ${tokenTo.symbol}`
-      },
-      loading: {
-        title: `Swapping ${formattedEthAmount} MON for ${tokenTo.symbol}`
-      },
-      error: { title: `Unable to swap ${formattedEthAmount} MON` }
+          SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+            success: {
+              title: `Swapped ${formattedEthAmount} MON for ${tokenTo.symbol}`
+            },
+            loading: {
+              title: `Swapping ${formattedEthAmount} MON for ${tokenTo.symbol}`
+            },
+            error: { title: `Unable to swap ${formattedEthAmount} MON` },
+            finally: resolve
+          })
+        })
     })
   }
 
-  const swapExactTokensForETH = async (
+  const swapExactTokensForEth = async (
     amountIn: bigint,
     amountOutMin: bigint,
     path: string[],
@@ -484,25 +506,30 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     deadline: bigint,
     tokenFrom: ITokenListToken
   ): Promise<void> => {
-    const tx = await client.writeContract({
-      address: ROUTER_ADDRESS,
-      abi: ROUTER_ABI,
-      functionName: 'swapExactTokensForETH',
-      args: [amountIn, amountOutMin, path, toAddress, deadline],
-      chain: client.chain,
-      account: client.account as Account
-    })
+    return new Promise((resolve) => {
+      client
+        .writeContract({
+          address: ROUTER_ADDRESS,
+          abi: ROUTER_ABI,
+          functionName: 'swapExactTokensForETH',
+          args: [amountIn, amountOutMin, path, toAddress, deadline],
+          chain: client.chain,
+          account: client.account as Account
+        })
+        .then((tx) => {
+          const parsedTokenAmount = formatUnits(amountIn, Number(tokenFrom.decimals))
 
-    const parsedTokenAmount = formatUnits(amountIn, Number(tokenFrom.decimals))
-
-    SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
-      success: {
-        title: `Swapped ${parsedTokenAmount} ${tokenFrom.symbol} for MON`
-      },
-      loading: {
-        title: `Swapping ${parsedTokenAmount} ${tokenFrom.symbol} for MON`
-      },
-      error: { title: `Unable to swap ${parsedTokenAmount} ${tokenFrom.symbol}` }
+          SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
+            success: {
+              title: `Swapped ${parsedTokenAmount} ${tokenFrom.symbol} for MON`
+            },
+            loading: {
+              title: `Swapping ${parsedTokenAmount} ${tokenFrom.symbol} for MON`
+            },
+            error: { title: `Unable to swap ${parsedTokenAmount} ${tokenFrom.symbol}` },
+            finally: resolve
+          })
+        })
     })
   }
 
@@ -514,8 +541,8 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     addLiquidity,
     addLiquidityETH,
     swapExactTokensForTokens,
-    swapExactETHForTokens,
-    swapExactTokensForETH,
+    swapExactETHForTokens: swapExactEthForTokens,
+    swapExactTokensForETH: swapExactTokensForEth,
     findBestRoute
   }
 }

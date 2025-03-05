@@ -6,3 +6,5 @@ export const WETH_ADDRESS = '0x760afe86e5de5fa0ee542fc7b7b713e1c5425701'
 
 export const HEADER_HEIGHT = '80px'
 export const SIDEBAR_WIDTH = '300px'
+
+export const HARDCODED_LIQUIDITY_SLIPAGE = 5
