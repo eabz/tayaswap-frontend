@@ -20,6 +20,7 @@ import { useAccount, useBalance, usePublicClient, useWalletClient } from 'wagmi'
 import { SubmitButton } from '../Buttons'
 import { ArrowUpArrowDownIcon } from '../Icons/ArrowUpArrowDown'
 import { TokenSelectorModal } from '../Modals'
+import { Slippage } from './Slippage'
 import { SwapToken } from './SwapToken'
 
 const DEFAULT_INITIAL_TOKEN_0: ITokenListToken = {
@@ -433,6 +434,8 @@ export function Swap() {
             inputValue={token1Value}
             loading={loadingToken1Value}
           />
+
+          <Slippage />
 
           <VStack pt="5">
             {!hasSufficientToken0 && (
