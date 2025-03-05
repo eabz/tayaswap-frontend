@@ -51,8 +51,8 @@ export function useWETH(): IWeth {
           const parsed = formatUnits(amountWETH, 18)
 
           SWAP_TOASTER.promise(waitForTransactionReceipt(WAGMI_CONFIG, { hash: tx }), {
-            success: { title: `Unwrapping ${parsed} WMON` },
-            loading: { title: `unwrapped ${parsed} WMON` },
+            success: { title: `Unwrapped ${parsed} WMON` },
+            loading: { title: `Unwrapping ${parsed} WMON` },
             error: { title: 'Unable to unwrap WMON' },
             finally: resolve
           })

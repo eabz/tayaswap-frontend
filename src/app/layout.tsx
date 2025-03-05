@@ -55,8 +55,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      suppressHydrationWarning
       className={`${GEIST_SANS.variable} ${GEIST_MONO.variable} ${INTER.variable} ${NUNITO.variable} antialiased`}
+      suppressHydrationWarning
     >
       <body>
         <GoogleAnalytics gaId="G-NS2ZG22J02" />
