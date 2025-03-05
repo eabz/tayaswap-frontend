@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 interface IActionButton extends ButtonProps {
   icon?: ReactNode
   text: string
-  onClickHandler: () => void
+  onClickHandler?: () => void
   height?: string
   fontSize?: string
 }

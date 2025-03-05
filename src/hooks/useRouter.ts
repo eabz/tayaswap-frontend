@@ -118,7 +118,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     s: string,
     deadline: bigint
   ): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const totalSupply = parseUnits(pool.totalSupply, 18)
       const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
       const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
@@ -148,6 +148,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
             finally: resolve
           })
         })
+        .catch(reject)
     })
   }
 
@@ -162,7 +163,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     s: string,
     deadline: bigint
   ): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const totalSupply = parseUnits(pool.totalSupply, 18)
       const reserve0 = parseUnits(pool.reserve0, Number(pool.token0.decimals))
       const reserve1 = parseUnits(pool.reserve1, Number(pool.token1.decimals))
@@ -202,6 +203,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
             finally: resolve
           })
         })
+        .catch(reject)
     })
   }
 
@@ -352,7 +354,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     client: WalletClient,
     deadline: bigint
   ): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const minAmountA = (amountADesired * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
       const minAmountB = (amountBDesired * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
 
@@ -380,6 +382,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
             finally: resolve
           })
         })
+        .catch(reject)
     })
   }
 
@@ -391,7 +394,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     client: WalletClient,
     deadline: bigint
   ): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const minTokenAmount = (amountTokenDesired * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
       const minETHAmount = (amountETHDesired * BigInt(100 - HARDCODED_LIQUIDITY_SLIPAGE)) / 100n
 
@@ -420,6 +423,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
             finally: resolve
           })
         })
+        .catch(reject)
     })
   }
 
@@ -433,7 +437,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     tokenFrom: ITokenListToken,
     tokenTo: ITokenListToken
   ): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       client
         .writeContract({
           address: ROUTER_ADDRESS,
@@ -457,6 +461,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
             finally: resolve
           })
         })
+        .catch(reject)
     })
   }
 
@@ -469,7 +474,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     ethAmount: bigint,
     tokenTo: ITokenListToken
   ): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       client
         .writeContract({
           address: ROUTER_ADDRESS,
@@ -494,6 +499,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
             finally: resolve
           })
         })
+        .catch(reject)
     })
   }
 
@@ -506,7 +512,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
     deadline: bigint,
     tokenFrom: ITokenListToken
   ): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       client
         .writeContract({
           address: ROUTER_ADDRESS,
@@ -530,6 +536,7 @@ export function useTayaSwapRouter(): ITayaSwapRouter {
             finally: resolve
           })
         })
+        .catch(reject)
     })
   }
 
